@@ -1,0 +1,11 @@
+# Launch details per agent type, one field per backend; notes and quirks live in ../agents.md.
+
+[claude]
+argv = ["claude", "--dangerously-skip-permissions"]
+t3_provider = "claudeAgent"
+t3_model = "claude-opus-5-5"
+
+[codex]
+argv = ["codex", "--dangerously-bypass-approvals-and-sandbox"]
+t3_provider = "codex"
+t3_model = "gpt-6.1-sol"
