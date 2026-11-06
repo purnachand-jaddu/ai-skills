@@ -15,12 +15,19 @@ def keychain_account() -> str:
     return os.environ.get("USER", "kaneo")
 
 
+def keychain(*args: str):
+    """Run macOS `security`; machines without it must set KANEO_API_KEY."""
+    try:
+        return subprocess.run(["security", *args], capture_output=True, text=True)
+    except FileNotFoundError as err:
+        raise TicketError("no Kaneo API key: set KANEO_API_KEY (this machine has no keychain)") from err
+
+
 def api_key() -> str:
     """KANEO_API_KEY, else the keychain, else ask once (hidden) and cache it in the keychain."""
     if os.environ.get("KANEO_API_KEY"):
         return os.environ["KANEO_API_KEY"]
-    found = subprocess.run(["security", "find-generic-password", "-s", KEYCHAIN_SERVICE,
-                            "-a", keychain_account(), "-w"], capture_output=True, text=True)
+    found = keychain("find-generic-password", "-s", KEYCHAIN_SERVICE, "-a", keychain_account(), "-w")
     if found.returncode == 0 and found.stdout.strip():
         return found.stdout.strip()
     asked = subprocess.run(["osascript", "-e",
@@ -30,15 +37,13 @@ def api_key() -> str:
     key = asked.stdout.strip()
     if asked.returncode != 0 or not key:
         raise TicketError("no Kaneo API key: set KANEO_API_KEY, or answer the prompt")
-    subprocess.run(["security", "add-generic-password", "-U", "-s", KEYCHAIN_SERVICE,
-                    "-a", keychain_account(), "-w", key], capture_output=True, text=True)
+    keychain("add-generic-password", "-U", "-s", KEYCHAIN_SERVICE, "-a", keychain_account(), "-w", key)
     return key
 
 
 def reset_key() -> None:
     """Forget the cached key; the next call asks again."""
-    subprocess.run(["security", "delete-generic-password", "-s", KEYCHAIN_SERVICE,
-                    "-a", keychain_account()], capture_output=True, text=True)
+    keychain("delete-generic-password", "-s", KEYCHAIN_SERVICE, "-a", keychain_account())
 
 
 def http(method: str, url: str, headers: dict, body: bytes | None):
@@ -91,6 +96,7 @@ class KaneoBackend(TicketBackend):
     def get(self, key):
         task = self.request("GET", f"/task/by-ticket-id/{key}", {"workspaceId": self.workspace_id})
         return {"id": task["id"], "key": key.upper(), "title": task.get("title"),
+                "description": task.get("description") or "",
                 "status": task.get("status"), "project_id": task.get("projectId"),
                 "url": self.ticket_url(key.upper())}
 
@@ -129,6 +135,7 @@ class KaneoBackend(TicketBackend):
                 for t in column.get("tasks", []):
                     key = f"{slug}-{t.get('number')}"
                     tickets.append({"id": t["id"], "key": key, "url": self.ticket_url(key), "title": t.get("title"),
+                                    "description": t.get("description") or "",
                                     "status": t.get("status"), "priority": t.get("priority"),
                                     "assignee": t.get("assigneeName"), "created_at": t.get("createdAt")})
             page += 1
@@ -146,6 +153,9 @@ class KaneoBackend(TicketBackend):
     def relations(self, ticket_id):
         return [{"kind": r.get("relationType"), "source_id": r.get("sourceTaskId"), "target_id": r.get("targetTaskId")}
                 for r in self.request("GET", f"/task-relation/{ticket_id}")]
+
+    def labels(self, ticket_id):
+        return [label.get("name") for label in self.request("GET", f"/label/task/{ticket_id}")]
 
     def create(self, project_id, title, description):
         task = self.request("POST", f"/task/{project_id}", body={
