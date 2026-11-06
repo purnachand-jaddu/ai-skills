@@ -31,7 +31,13 @@ more file in `backends/`; no skill changes.
 | Backend | Helpers are | Gaps |
 |---|---|---|
 | `herdr` | hc children in a pane beside you (`--hidden`: no pane) | `collect` can't see a finished turn; the report message is the signal |
-| `t3` | T3 Code threads in the same project, listed in the sidebar | `cwd` must be inside a T3 project (sibling worktrees are not); `stop` isn't in the t3 CLI: it says to stop the thread with T3's interrupt (`stop: true`), then `sm forget <name>` |
+| `t3` | T3 Code threads in the same project, listed in the sidebar | `cwd` must be inside a T3 project (sibling worktrees are not); `--hidden` has no effect, every helper is a sidebar thread; `stop` isn't in the t3 CLI: see "Stopping on t3" |
+
+**Stopping on t3:** `forget` drops the helper but leaves its thread in the sidebar, so
+close the thread first, with the `address` from `start` or `status`: T3's
+`t3_thread_interrupt` (`stop: true`) if it is still running, `t3_thread_organize`
+(`archive`), then `$SM forget <name>`. Those tools unavailable: forget it anyway and
+say the thread stays in the sidebar.
 
 **Agents:** launch argv per agent type in `session_manager/agents.toml`; notes
 and quirks in `agents.md`. Default agent: `claude`.
@@ -48,7 +54,7 @@ and quirks in `agents.md`. Default agent: `claude`.
 | `read(helper, lines)` | `$SM read NAME --lines 40` | The helper's recent screen, as text |
 | `stop(helper)` | `$SM stop NAME` | Ends a helper and removes it; only helpers this skill started |
 | `self()` | `$SM self` | This session's own address |
-| forget | `$SM forget NAME` | Drops a helper from the T3 registry once it has been stopped by other means |
+| forget | `$SM forget NAME` | Drops a helper from the T3 registry and removes its worktree, once its thread is archived |
 | `report_command(caller)` | `$SM report-cmd [--caller ADDR]` | The command a helper runs to send one line to the caller |
 | envelope | `$SM envelope --feature F --role R --task-id ID --task T --scope S --rules "…"` | Prints the task envelope below, with the report command filled in |
 
