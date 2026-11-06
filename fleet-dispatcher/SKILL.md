@@ -61,3 +61,7 @@ Bias rules:
 
 The `--reason` you pass is shown to the worker and on the dashboard: make it useful
 ("touches 3 API handlers + migration; round up for data change"), not "seems medium".
+
+## When the output misses
+
+If the user is unhappy with what this skill produced, load the `skill-improve` skill.

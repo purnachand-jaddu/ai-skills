@@ -60,3 +60,7 @@ user to run them (in Claude Code: `! glab auth login`). Never paste tokens into 
 ## What is per machine (not in the bundle)
 `~/.agent-fleet/` — `config.env` (tracker credentials, dashboard token), `projects.json` (local repo
 paths), runs, worktrees. Logins live in `~/.claude`, `~/.config/glab-cli`, `~/.cloudflared`.
+
+## When the output misses
+
+If the user is unhappy with what this skill produced, load the `skill-improve` skill.

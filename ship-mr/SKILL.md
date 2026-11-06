@@ -54,3 +54,7 @@ python3 ~/codebase/ai-skills/ship-mr/scripts/ship.py blocked --reason "<specific
 ```
 
 Then stop. Don't open a speculative MR. Partial commits stay on the branch for whoever picks it up.
+
+## When the output misses
+
+If the user is unhappy with what this skill produced, load the `skill-improve` skill.

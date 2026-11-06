@@ -49,3 +49,7 @@ For something that survives logout, run both under systemd (`fleet dashboard` an
 ## Emitting events
 Anything can add to the feed:
 `python3 ~/codebase/ai-skills/lib/fleet.py emit <kind> --msg "<text>" [--run ID] [--ticket ID]`.
+
+## When the output misses
+
+If the user is unhappy with what this skill produced, load the `skill-improve` skill.
