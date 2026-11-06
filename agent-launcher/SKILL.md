@@ -64,3 +64,7 @@ when the machine is a disposable sandbox.
 ## Files
 `~/.agent-fleet/runs/<run>/` → `meta.json` (state of record), `prompt.md`, `stream.jsonl`
 (full transcript), `stderr.log`, `supervisor.log`.
+
+## When the output misses
+
+If the user is unhappy with what this skill produced, load the `skill-improve` skill.
