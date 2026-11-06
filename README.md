@@ -1,7 +1,55 @@
 # ai-skills
 
-Personal agent skills, one directory each. The rest of this page covers the agent fleet, which is
-the set of skills in the table below plus `bin/`, `lib/` and `config/`.
+Personal agent skills, one directory each. After the graph, this page covers the agent fleet, which is
+the set of skills in its table plus `bin/`, `lib/` and `config/`.
+
+## Skills graph
+
+Solid arrows load or start the skill; the dashed one is an offer you decide on.
+
+```mermaid
+flowchart TD
+  subgraph interactive["Interactive: you in a session"]
+    raise[pr-raise]
+    takeover[pr-takeover]
+    pair[pair-programming]
+    monitor[pr-monitor]
+  end
+  subgraph fleet["Fleet: headless workers"]
+    setup[fleet-setup]
+    dashboard[fleet-dashboard]
+    dispatcher[fleet-dispatcher]
+    launcher[agent-launcher]
+    ship[ship-mr]
+  end
+  subgraph services["Shared services"]
+    tickets[ticket-manager]
+    review[diff-review]
+    sessions[session-manager]
+  end
+
+  raise -->|starts watch| monitor
+  takeover -->|starts watch| monitor
+  monitor -.->|offers handoff| takeover
+  raise -->|link ticket| tickets
+  monitor -->|sync status| tickets
+  monitor -->|each new head| review
+  monitor -->|watch helper| sessions
+  takeover -->|reviewer| review
+  takeover -->|helpers| sessions
+  pair -->|reviewer| review
+  pair -->|helpers| sessions
+
+  setup -->|schedules ticks| dispatcher
+  dashboard -->|steer, take over| launcher
+  dispatcher -->|launch at tier| launcher
+  launcher -->|worker ships| ship
+  dispatcher -->|read, create| tickets
+  launcher -->|claim, requeue| tickets
+  ship -->|sync MR state| tickets
+```
+
+Every skill loads `skill-improve` when its output misses. `whatsapp-backup` has no other links.
 
 ## Agent fleet
 
