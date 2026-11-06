@@ -21,7 +21,14 @@ def parse_args(argv):
     cr = sub.add_parser("create")
     cr.add_argument("--project", required=True, help="project id")
     cr.add_argument("--title", required=True)
-    cr.add_argument("--description-file", required=True)
+    cr.add_argument("--description-file", required=True, help="- reads stdin")
+    cm = sub.add_parser("comment")
+    cm.add_argument("key")
+    cm.add_argument("text")
+    mv = sub.add_parser("move")
+    mv.add_argument("key")
+    mv.add_argument("status", help="column slug, or done for the final column")
+    sub.add_parser("health")
     st = sub.add_parser("start")
     st.add_argument("key")
     st.add_argument("--branch", required=True)
@@ -61,6 +68,31 @@ def save_ticket_state(path, key, entry):
     state = load_state(path)
     state.setdefault("tickets", {})[key] = entry
     Path(path).write_text(json.dumps(state, indent=2))
+
+
+def description(path):
+    return sys.stdin.read() if path == "-" else Path(path).read_text()
+
+
+def comment(backend, key, text):
+    ticket = backend.get(key)
+    backend.comment(ticket["id"], text)
+    return {"ticket": ticket["key"], "url": ticket["url"], "commented": True}
+
+
+def move(backend, key, status):
+    """Move the ticket, unless a guard says to leave it."""
+    ticket = backend.get(key)
+    to, why = lifecycle.plan_move(ticket["status"], backend.columns(ticket["project_id"]), status)
+    if to:
+        backend.move(ticket["id"], to)
+    return {"ticket": ticket["key"], "url": ticket["url"], "from": ticket["status"], "to": to, "why": why}
+
+
+def health(backend):
+    """A cheap call that needs a reachable tracker and a valid key."""
+    backend.projects()
+    return {"ok": True, "backend": backend.name}
 
 
 def start(backend, args):
@@ -108,13 +140,19 @@ def dispatch(args, backend: TicketBackend):
     if args.op == "columns":
         return backend.columns(args.project_id)
     if args.op == "create":
-        return backend.create(args.project, args.title, Path(args.description_file).read_text())
+        return backend.create(args.project, args.title, description(args.description_file))
     if args.op == "list":
         return backend.list(args.project_id, args.status)
     if args.op == "history":
         return backend.history(backend.get(args.key)["id"])
     if args.op == "relations":
         return backend.relations(backend.get(args.key)["id"])
+    if args.op == "comment":
+        return comment(backend, args.key, args.text)
+    if args.op == "move":
+        return move(backend, args.key, args.status)
+    if args.op == "health":
+        return health(backend)
     if args.op == "start":
         return start(backend, args)
     if args.op == "sync":

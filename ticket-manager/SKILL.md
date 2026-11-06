@@ -30,8 +30,8 @@ TM=~/codebase/ai-skills/ticket-manager/tm
 Switching tracker means one more file in `backends/` and that config line.
 
 **Credentials:** `KANEO_API_KEY`, else the macOS keychain entry `kaneo-api-key`,
-else a hidden prompt on first use that caches it there. `$TM reset-key` forgets
-it. Kaneo allows 100 requests per 60 s per key; one sync is about 4.
+else a hidden prompt on first use that caches it there. Off macOS, set
+`KANEO_API_KEY`. `$TM reset-key` forgets it. Kaneo allows 100 requests per 60 s per key; one sync is about 4.
 
 A ticket from another tracker (a GitHub or Jira URL): link it in the MR, skip
 status sync, and say sync isn't supported for it.
@@ -51,14 +51,17 @@ status sync, and say sync isn't supported for it.
 
 | Need | Command |
 |---|---|
-| Resolve an ID | `$TM get ACME-154` → `{id, key, title, status, project_id, url}` |
+| Resolve an ID | `$TM get ACME-154` → `{id, key, title, description, status, project_id, url}` |
 | Search | `$TM search "csv export timeout" --limit 3` |
 | Projects to create in | `$TM projects` |
 | A project's columns | `$TM columns <project_id>` |
-| Create (after a yes) | `$TM create --project <id> --title "…" --description-file <file>` |
+| Create (after a yes) | `$TM create --project <id> --title "…" --description-file <file>` (`-` reads stdin) |
 | Every ticket in a project | `$TM list <project_id> [--status <slug>]` (all pages) |
 | A ticket's history | `$TM history <KEY>`: comments and activity, oldest first |
 | A ticket's links | `$TM relations <KEY>` |
+| Comment | `$TM comment <KEY> "<markdown>"` |
+| Move outside an MR | `$TM move <KEY> <slug>` (same guards; `done` means the final column) |
+| Tracker reachable, key valid | `$TM health` |
 | Work started | `$TM start <KEY> --branch <branch>` |
 | Sync with the MR | `$TM sync <KEY> --relation fixes\|refs --mr-state open\|merged\|closed [--draft] [--valid-issues] [--merged-into <branch>] --mr-ref '!881' --mr-url <url> [--sha <sha>] [--reasons-file <file>] --state-file ~/.pr-monitor/<project>-<iid>.json` |
 

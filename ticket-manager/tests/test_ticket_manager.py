@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -8,6 +10,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ticket_manager import backends, cli, lifecycle  # noqa: E402
+from ticket_manager.backends import kaneo  # noqa: E402
 from ticket_manager.backends.kaneo import KaneoBackend  # noqa: E402
 from ticket_manager.interface import TicketBackend, TicketError  # noqa: E402
 
@@ -109,6 +112,9 @@ class FakeBackend(TicketBackend):
     def history(self, ticket_id):
         return []
 
+    def labels(self, ticket_id):
+        return []
+
     def relations(self, ticket_id):
         return []
 
@@ -163,6 +169,48 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(backend.comments, ["Work started on branch `fix/x`"])
 
 
+class FleetOpsTest(unittest.TestCase):
+    def run_cli(self, argv, backend):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = cli.main(argv, backend)
+        return code, json.loads(out.getvalue())
+
+    def test_comment_resolves_the_key(self):
+        b = FakeBackend()
+        code, out = self.run_cli(["comment", "ACME-154", "hello"], b)
+        self.assertEqual((code, b.comments, out["url"]), (0, ["hello"], "https://t/ACME-154"))
+
+    def test_move_applies_the_guards(self):
+        b = FakeBackend(status="in-staging-preview", columns=STAGED_BOARD)
+        _, out = self.run_cli(["move", "ACME-154", "to-do"], b)
+        self.assertEqual((b.moves, out["to"]), ([], None))
+        self.assertIn("set by a person", out["why"])
+
+    def test_move_can_send_a_ticket_back(self):
+        b = FakeBackend(status="in-progress")
+        self.run_cli(["move", "ACME-154", "to-do"], b)
+        self.assertEqual(b.moves, ["to-do"])
+
+    def test_health_reports_the_backend(self):
+        self.assertEqual(self.run_cli(["health"], FakeBackend())[1], {"ok": True, "backend": "fake"})
+
+    def test_create_can_read_the_description_from_stdin(self):
+        b = FakeBackend()
+        b.create = mock.Mock(return_value={"key": "ACME-1"})
+        with mock.patch("sys.stdin", io.StringIO("from stdin")):
+            self.run_cli(["create", "--project", "p1", "--title", "t", "--description-file", "-"], b)
+        b.create.assert_called_once_with("p1", "t", "from stdin")
+
+
+class ApiKeyTest(unittest.TestCase):
+    def test_no_keychain_says_to_set_the_variable(self):
+        with mock.patch.dict("os.environ", {"KANEO_API_KEY": ""}), \
+                mock.patch("subprocess.run", side_effect=FileNotFoundError("security")):
+            with self.assertRaisesRegex(TicketError, "set KANEO_API_KEY"):
+                kaneo.api_key()
+
+
 class LoadBackendTest(unittest.TestCase):
     def test_a_missing_kaneo_setting_says_what_to_set(self):
         path = Path(tempfile.mkdtemp()) / "config.toml"
@@ -205,6 +253,17 @@ class KaneoTest(unittest.TestCase):
         self.assertEqual(self.backend([(200, {}, json.dumps(board))]).list("p1", None)[0]["url"], link)
         created = self.backend([(200, {}, json.dumps(task)), (200, {}, json.dumps({"slug": "acme"}))])
         self.assertEqual(created.create("p1", "x", "d")["url"], link)
+
+    def test_get_and_list_carry_the_description(self):
+        task = {"id": "t1", "number": 154, "title": "x", "description": "why", "status": "to-do"}
+        self.assertEqual(self.backend([(200, {}, json.dumps(task))]).get("acme-154")["description"], "why")
+        board = {"data": {"slug": "acme", "columns": [{"tasks": [task]}]}}
+        self.assertEqual(self.backend([(200, {}, json.dumps(board))]).list("p1", None)[0]["description"], "why")
+
+    def test_labels_are_read_per_ticket(self):
+        b = self.backend([(200, {}, json.dumps([{"id": "l1", "name": "agent"}]))])
+        self.assertEqual(b.labels("t1"), ["agent"])
+        self.assertEqual(self.calls[0][1], "https://kaneo.example/api/label/task/t1")
 
     def test_move_puts_the_status(self):
         b = self.backend([(200, {}, "{}")])

@@ -1,3 +1,5 @@
+from __future__ import annotations  # the `list` method below hides the builtin
+
 from abc import ABC, abstractmethod
 
 
@@ -8,7 +10,7 @@ class TicketError(Exception):
 class TicketBackend(ABC):
     """The operations ticket-manager needs, implemented once per tracker.
 
-    A ticket is a dict: {id, key, title, status, project_id, url}; a column is
+    A ticket is a dict: {id, key, title, description, status, project_id, url}; a column is
     {slug, name, is_final}.
     """
 
@@ -53,3 +55,7 @@ class TicketBackend(ABC):
     @abstractmethod
     def relations(self, ticket_id: str) -> list[dict]:
         """Links to other tickets: {kind, source_id, target_id}."""
+
+    @abstractmethod
+    def labels(self, ticket_id: str) -> list[str]:
+        """The ticket's label names."""

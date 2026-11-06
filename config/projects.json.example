@@ -1,0 +1,3 @@
+{
+  "<tracker-project-id>": { "repo": "/path/to/your/repo", "base": "main" }
+}

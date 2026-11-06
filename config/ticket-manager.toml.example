@@ -1,0 +1,7 @@
+# ~/.config/ticket-manager/config.toml, read by tm and the fleet.
+backend = "kaneo"
+
+[kaneo]
+base_url = "https://kaneo.example.com/api"   # include /api
+workspace_id = "<workspace-id>"
+workspace_slug = "<workspace-slug>"
