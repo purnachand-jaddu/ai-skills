@@ -44,9 +44,11 @@ session live, so do not ask questions — decide, or stop and report.
 - Work only inside your current git worktree, on the branch already checked out.
 - Report milestones with: python3 {fleet} emit run.progress --msg "<one line>"
 - Commit in small, conventional commits. Run the project's tests/linters if they exist.
-- When the work is done, use the ship-mr skill to push and open the merge request.
-- If the ticket is ambiguous, impossible, or needs a human decision, use the
-  ship-mr skill's "blocked" path instead of guessing."""
+- No AI attribution (Co-Authored-By, "Generated with") in commits or the merge request.
+- When the work is done, use the pr-raise skill's "Headless run" section to push and
+  open the merge request.
+- If the ticket is ambiguous, impossible, or needs a human decision, use that section's
+  blocked path instead of guessing."""
 
 
 def get_tracker():
@@ -89,7 +91,7 @@ Repository: {meta['repo']}
 Worktree (your cwd): {meta['worktree']}
 Branch: {meta['branch']}  (target: {meta['base']})
 
-Implement this ticket, then ship it with the ship-mr skill.
+Implement this ticket, then raise it with the pr-raise skill ("Headless run").
 """
 
 
@@ -212,7 +214,7 @@ def cmd_supervise(a):
                   TIERS[meta["tier"]]["timeout"] * 60)
     code, res = out["exit_code"], out["result"]
 
-    meta = fleet.read_meta(run_id)  # ship-mr may have written mr_url / blocked meanwhile
+    meta = fleet.read_meta(run_id)  # ship.py may have written mr_url / blocked meanwhile
     if meta.get("state") == "killed":
         state = "killed"
     elif sup.finish == "takeover" and out.get("takeover"):

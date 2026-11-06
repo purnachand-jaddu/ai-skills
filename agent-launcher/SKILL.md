@@ -41,7 +41,9 @@ A worker that finishes a turn stays open for steering for 60s (`IDLE_GRACE` in
 4. Starts a detached supervisor that runs
    `claude -p --model <tier model> --effort <e>` with stream-json in and out, in the worktree
    (`FLEET_RUN_ID` / `FLEET_TICKET_ID` in env), with a per-tier timeout.
-5. When the worker exits, the outcome is recorded: `done` (MR opened), `blocked`, `failed`,
+5. The worker finishes through `pr-raise`'s "Headless run", which calls `scripts/ship.py`
+   to push, open the MR and record it on the run, or to report blocked.
+6. When the worker exits, the outcome is recorded: `done` (MR opened), `blocked`, `failed`,
    `timeout`, `no-mr` (exited cleanly without shipping), `stopped`, `taken-over`, or `killed`. Unsuccessful outcomes
    comment on the ticket and send it back to `to-do`.
 
