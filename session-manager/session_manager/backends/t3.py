@@ -137,8 +137,8 @@ class T3Backend(SessionBackend):
 
     def stop(self, helper):
         thread = self.thread_id(helper)
-        raise SessionError(f"the t3 CLI cannot stop a thread; stop {thread} with T3 Code's thread interrupt "
-                           f"(stop: true) or in the app, then run `sm forget {helper}`")
+        raise SessionError(f"the t3 CLI cannot stop a thread; use T3 Code's t3_thread_interrupt (stop: true) if {thread} "
+                           f"is running, then t3_thread_organize (archive), then run `sm forget {helper}`")
 
     def forget(self, helper):
         helpers = self.load()

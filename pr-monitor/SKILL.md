@@ -116,7 +116,8 @@ monitor's context stays small:
    (no pane).
    Task: "Load the `diff-review` skill and review `<sha>` against
    `origin/<target>`; write the report to `~/.pr-monitor/<project>-<iid>-diff-<n>.md`."
-3. `collect()` its report, then `stop` the reviewer and
+3. `collect()` its report, then `stop` the reviewer (on t3, session-manager's
+   "Stopping on t3", so its thread leaves the sidebar) and
    `git worktree remove --force` the worktree.
 4. Record `review: {reviewed_sha, findings, file}` (one-line titles) in the state
    file, so the next run on the same head repeats nothing.
