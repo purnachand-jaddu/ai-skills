@@ -49,7 +49,7 @@ flowchart TD
   ship -->|sync MR state| tickets
 ```
 
-Every skill loads `skill-improve` when its output misses. `whatsapp-backup` has no other links.
+Every skill loads `skill-improve` when its output misses. `whatsapp-backup` and `oss-explore` have no other links.
 
 ## Agent fleet
 
