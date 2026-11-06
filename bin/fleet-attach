@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Run by ttyd for each browser terminal: attach to a taken-over run's tmux session.
+run="${1:-}"
+if [[ ! "$run" =~ ^[A-Za-z0-9-]{1,64}$ ]]; then
+  echo "No run selected. Open this terminal from the dashboard's Take over button."; read -rp "Press Enter to close." _; exit 1
+fi
+if ! tmux has-session -t "fleet-$run" 2>/dev/null; then
+  echo "Run $run has no interactive session. Take it over from the dashboard first."; read -rp "Press Enter to close." _; exit 1
+fi
+exec tmux attach -t "fleet-$run"

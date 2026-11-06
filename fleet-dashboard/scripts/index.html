@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Fleet</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --line: #272e38; --text: #e6edf3; --muted: #8b949e;
+    --running: #4c9aff; --done: #3fb950; --failed: #f85149; --blocked: #d29922; --idle: #6e7681;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  .muted { color: var(--muted); }
+  .pill { padding: 2px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--line); white-space: nowrap; }
+  main { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap: 16px; padding: 16px 20px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; padding: 12px 14px; }
+  .stat { min-width: 92px; } .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { padding: 8px 14px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; border-top: 0; }
+  tr.run { cursor: pointer; } tr.run:hover, tr.run.sel { background: #1c2330; }
+  .state::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--idle); }
+  .s-running::before, .s-queued::before { background: var(--running); animation: pulse 1.4s infinite; }
+  .s-done::before { background: var(--done); }
+  .s-failed::before, .s-timeout::before, .s-lost::before, .s-killed::before { background: var(--failed); }
+  .s-blocked::before, .s-no-mr::before, .s-stopped::before { background: var(--blocked); }
+  .s-taken-over::before { background: #b58cff; }
+  #controls { display: grid; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  #controls textarea { width: 100%; min-height: 56px; resize: vertical; background: var(--bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; }
+  #controls .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button, .btn { background: #1f6feb; color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; font: inherit;
+    cursor: pointer; text-decoration: none; }
+  button.secondary { background: #30363d; } button.danger { background: #b62324; }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, .btn:focus-visible, textarea:focus-visible { outline: 2px solid var(--running); outline-offset: 2px; }
+  #ctlmsg { font-size: 12px; color: var(--muted); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  a { color: var(--running); }
+  .feed { max-height: 70vh; overflow: auto; font-size: 13px; }
+  .ev { padding: 6px 14px; border-top: 1px solid var(--line); }
+  .ev code, td code { font-size: 12px; color: var(--muted); }
+  #log { max-height: 60vh; overflow: auto; font: 12px/1.5 ui-monospace, monospace; padding: 8px 14px; white-space: pre-wrap; word-break: break-word; }
+  .l-tool { color: var(--muted); } .l-error { color: var(--failed); } .l-result { color: var(--done); border-top: 1px solid var(--line); padding-top: 6px; margin-top: 6px; }
+  .l-text { margin: 6px 0; }
+  .empty { padding: 18px 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Agent Fleet</h1>
+  <span class="pill" id="slots">–</span>
+  <span class="muted" id="updated"></span>
+</header>
+<main>
+  <div style="display:grid; gap:16px; align-content:start">
+    <section>
+      <h2>Overview</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+    <section>
+      <h2>Runs</h2>
+      <table><thead><tr><th>State</th><th>Ticket</th><th>Tier</th><th>Cost</th><th>MR</th></tr></thead>
+        <tbody id="runs"></tbody></table>
+    </section>
+    <section id="logpanel" hidden>
+      <h2 id="logtitle">Transcript</h2>
+      <div id="controls" hidden>
+        <label for="msg" class="muted" style="font-size:12px">Message to the worker</label>
+        <textarea id="msg" placeholder="e.g. Only change the API handler, skip the migration"></textarea>
+        <div class="row">
+          <button id="b-steer" title="Interrupt what it is doing and send this message">Steer now</button>
+          <button id="b-say" class="secondary" title="Deliver at the end of its current turn">Send after this turn</button>
+          <button id="b-takeover" class="secondary">Take over</button>
+          <button id="b-stop" class="danger">Stop</button>
+          <a id="b-term" class="btn" target="_blank" rel="noopener" hidden>Open terminal</a>
+          <span id="ctlmsg" role="status"></span>
+        </div>
+      </div>
+      <div id="log"></div>
+    </section>
+  </div>
+  <section>
+    <h2>Activity</h2>
+    <div class="feed" id="feed"></div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === "class" ? n.className = v : n.setAttribute(k, v);
+  for (const k of kids) n.append(k instanceof Node ? k : document.createTextNode(k ?? ""));
+  return n;
+};
+const ago = (ts) => {
+  if (!ts) return "";
+  const s = Math.max(0, (Date.now() - Date.parse(ts)) / 1000);
+  return s < 60 ? `${s|0}s ago` : s < 3600 ? `${(s/60)|0}m ago` : s < 86400 ? `${(s/3600)|0}h ago` : `${(s/86400)|0}d ago`;
+};
+const safeUrl = (u) => /^https:\/\//.test(u || "") ? u : null;
+let selected = null;
+let lastState = null;
+const LIVE = ["queued", "running"];
+
+function renderControls() {
+  const r = lastState && lastState.runs.find(x => x.run_id === selected);
+  const box = $("controls");
+  if (!lastState || !lastState.control || !r) { box.hidden = true; return; }
+  const live = LIVE.includes(r.state);
+  const term = r.state === "taken-over" && r.tmux_alive;
+  box.hidden = !(live || term);
+  for (const id of ["b-steer", "b-say", "b-takeover", "b-stop"]) $(id).disabled = !live;
+  $("msg").disabled = !live;
+  $("b-term").hidden = !term;
+  if (term) $("b-term").href = `/term/?arg=${encodeURIComponent(r.run_id)}`;
+}
+
+async function control(op, needsText) {
+  const text = $("msg").value.trim();
+  if (needsText && !text) { $("ctlmsg").textContent = "Write a message first."; return; }
+  if (op === "stop" && !confirm("Stop this worker? Its branch is kept.")) return;
+  if (op === "takeover" && !confirm("Stop the automatic worker and continue this session yourself in a terminal?")) return;
+  $("ctlmsg").textContent = op === "takeover" ? "Handing over… (up to 30s)" : "Sending…";
+  try {
+    const res = await fetch(`/api/runs/${encodeURIComponent(selected)}/control`, {
+      method: "POST", headers: {"Content-Type": "application/json", "X-Fleet-Control": "1"},
+      body: JSON.stringify({op, text}),
+    });
+    const body = await res.json();
+    if (!body.ok) { $("ctlmsg").textContent = `Failed: ${body.error}`; return; }
+    if (needsText) $("msg").value = "";
+    $("ctlmsg").textContent = op === "say" ? (body.queued ? "Queued for the end of this turn." : "Sent.")
+      : op === "steer" ? "Interrupted and redirected." : op === "stop" ? "Stopping…" : "Taken over.";
+    if (op === "takeover" && body.terminal) window.open(body.terminal, "_blank", "noopener");
+    refresh();
+  } catch (e) { $("ctlmsg").textContent = `Failed: ${e}`; }
+}
+$("b-steer").onclick = () => control("steer", true);
+$("b-say").onclick = () => control("say", true);
+$("b-stop").onclick = () => control("stop", false);
+$("b-takeover").onclick = () => control("takeover", false);
+
+function renderStats(runs, slots) {
+  const count = (pred) => runs.filter(pred).length;
+  const cost = runs.reduce((a, r) => a + (r.cost_usd || 0), 0);
+  const items = [
+    ["Active", `${slots.used}/${slots.max}`],
+    ["MRs opened", count(r => r.mr_url)],
+    ["Blocked", count(r => r.state === "blocked")],
+    ["Failed", count(r => ["failed", "timeout", "lost", "no-mr"].includes(r.state))],
+    ["Spend", `$${cost.toFixed(2)}`],
+  ];
+  $("stats").replaceChildren(...items.map(([k, v]) => el("div", {class: "stat"}, el("b", {}, String(v)), el("span", {class: "muted"}, k))));
+}
+
+function renderRuns(runs) {
+  if (!runs.length) return $("runs").replaceChildren(el("tr", {}, el("td", {colspan: 5, class: "empty"}, "No runs yet.")));
+  $("runs").replaceChildren(...runs.map(r => {
+    const mr = safeUrl(r.mr_url);
+    const tr = el("tr", {class: "run" + (r.run_id === selected ? " sel" : "")},
+      el("td", {}, el("span", {class: `state s-${r.state}`}, r.state), el("br"), el("code", {}, ago(r.updated_at || r.created_at))),
+      el("td", {}, el("div", {}, `${r.ticket_ref ?? ""} · ${r.title ?? ""}`), el("code", {}, r.branch ?? "")),
+      el("td", {}, `${r.tier ?? ""} `, el("code", {}, r.model ?? "")),
+      el("td", {}, r.cost_usd ? `$${r.cost_usd.toFixed(2)}` : ""),
+      el("td", {}, mr ? el("a", {href: mr, target: "_blank", rel: "noopener"}, "!" + mr.split("/").pop()) : ""));
+    tr.onclick = () => { selected = r.run_id; $("ctlmsg").textContent = ""; loadLog(); refresh(); };
+    return tr;
+  }));
+}
+
+function renderFeed(events) {
+  if (!events.length) return $("feed").replaceChildren(el("div", {class: "empty"}, "No activity yet."));
+  $("feed").replaceChildren(...events.slice(0, 200).map(e => {
+    const url = safeUrl(e.msg);
+    return el("div", {class: "ev"},
+      el("code", {}, `${ago(e.ts)} · ${e.kind}${e.run ? " · " + e.run : ""}`), el("br"),
+      url ? el("a", {href: url, target: "_blank", rel: "noopener"}, url) : (e.msg ?? ""));
+  }));
+}
+
+async function loadLog() {
+  if (!selected) return;
+  const res = await fetch(`/api/runs/${encodeURIComponent(selected)}/log`);
+  if (!res.ok) return;
+  const {meta, log} = await res.json();
+  $("logpanel").hidden = false;
+  $("logtitle").textContent = `Transcript · ${meta.run_id} · ${meta.state}`;
+  const box = $("log"), atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+  box.replaceChildren(...(log.length ? log : [{k: "tool", v: "(no output yet)"}]).map(row =>
+    row.k === "tool" ? el("div", {class: "l-tool"}, `▸ ${row.name ?? ""} ${row.v}`)
+    : row.k === "error" ? el("div", {class: "l-error"}, `✗ ${row.v}`)
+    : row.k === "result" ? el("div", {class: "l-result"}, `■ ${row.turns ?? "?"} turns · $${(row.cost ?? 0).toFixed(2)}\n${row.v}`)
+    : el("div", {class: "l-text"}, row.v)));
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+async function refresh() {
+  try {
+    const res = await fetch("/api/state");
+    if (!res.ok) throw new Error(res.status);
+    const s = await res.json();
+    $("slots").textContent = `${s.slots.used}/${s.slots.max} slots busy`;
+    $("updated").textContent = "updated " + new Date().toLocaleTimeString();
+    lastState = s;
+    renderStats(s.runs, s.slots); renderRuns(s.runs); renderFeed(s.events); renderControls();
+  } catch (e) { $("updated").textContent = "disconnected — retrying"; }
+}
+refresh(); setInterval(refresh, 3000); setInterval(loadLog, 4000);
+</script>
+</body>
+</html>
