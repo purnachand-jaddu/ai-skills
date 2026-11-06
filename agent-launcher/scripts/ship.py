@@ -56,17 +56,20 @@ def cmd_mr(a):
     branch = sh("git", "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     if branch != meta["branch"]:
         sys.exit(f"on branch {branch}, expected {meta['branch']}")
-    if sh("git", "status", "--porcelain").stdout.strip():
+    if sh("git", "status", "--porcelain", "--untracked-files=no").stdout.strip():
         sys.exit("worktree has uncommitted changes — commit (or discard) them first")
+    # Tools litter the worktree (an MCP server's log), so untracked files are named, not fatal
+    untracked = sh("git", "ls-files", "--others", "--exclude-standard").stdout.split()
     ahead = sh("git", "rev-list", "--count", f"origin/{meta['base']}..HEAD").stdout.strip()
     if ahead == "0":
         sys.exit("no commits on this branch — nothing to ship")
 
     sh("git", "push", "-u", "origin", branch)
     body = sys.stdin.read() if a.body_file == "-" else Path(a.body_file).read_text()
-    ticket = f"[{meta['ticket_ref']}]({meta['ticket_url']})" if meta.get("ticket_url") else meta["ticket_ref"]
-    body += f"\n\n---\nTicket: {ticket} · fleet run `{meta['run_id']}` · " \
-            f"tier {meta['tier']} / {meta['model']}\n"
+    url = meta.get("ticket_url")
+    fixes = f"Fixes {meta['ticket_ref']}: {url}" if url else f"Fixes {meta['ticket_ref']}"
+    left_out = f" · untracked, not in this MR: {', '.join(untracked)}" if untracked else ""
+    body = f"{fixes}\n\n{body.strip()}\n\n---\nFleet run `{meta['run_id']}`{left_out}\n"
     cmd = ["glab", "mr", "create", "--source-branch", branch, "--target-branch", meta["base"],
            "--title", a.title, "--description", body, "--remove-source-branch", "--yes"]
     if a.draft:

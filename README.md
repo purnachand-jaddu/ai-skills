@@ -20,7 +20,6 @@ flowchart TD
     dashboard[fleet-dashboard]
     dispatcher[fleet-dispatcher]
     launcher[agent-launcher]
-    ship[ship-mr]
   end
   subgraph services["Shared services"]
     tickets[ticket-manager]
@@ -43,10 +42,9 @@ flowchart TD
   setup -->|schedules ticks| dispatcher
   dashboard -->|steer, take over| launcher
   dispatcher -->|launch at tier| launcher
-  launcher -->|worker ships| ship
+  launcher -->|workers finish with| raise
   dispatcher -->|read, create| tickets
   launcher -->|claim, requeue| tickets
-  ship -->|sync MR state| tickets
 ```
 
 Every skill loads `skill-improve` when its output misses. `whatsapp-backup` and `oss-explore` have no other links.
@@ -70,7 +68,7 @@ shows all of it.
        ▼              ▼              ▼
    worker (haiku)  worker (sonnet)  worker (opus)    one git worktree + branch each
        │              │              │
-       └──── ship-mr: push → glab mr create → comment + move ticket ────┘
+       └──── pr-raise: push → glab mr create → comment + move ticket ───┘
                       │
    ~/.agent-fleet/{runs/*, events.jsonl} ──► fleet-dashboard ──► cloudflared
 ```
@@ -80,7 +78,7 @@ shows all of it.
 | `fleet-dispatcher` | Haiku router | Triage + complexity rubric, TICK and ASK modes |
 | `ticket-manager` | router, workers | Reads tickets, comments, and moves them with `tm`; shared with `pr-raise` and `pr-monitor` |
 | `agent-launcher` | router, you | Worktree + detached `claude -p` worker per ticket; status/kill/retry |
-| `ship-mr` | workers | Verify, push, open GitLab MR, link ticket — or report blocked |
+| `pr-raise` | workers | Its "Headless run" section: verify, push, open GitLab MR, link ticket, or report blocked |
 | `fleet-dashboard` | you | Web UI + cloudflared tunnel; opt-in steering and takeover terminal |
 | `fleet-setup` | you | Install, `doctor`, config, project mapping, schedule, services, bundle to another VM |
 
