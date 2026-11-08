@@ -51,7 +51,10 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   - a review batch settled (see "Peer review comments");
   - ticket moved;
   - conflicts with the target, or a parent MR merged: offer a sync;
-  - merged or closed (the final one, then stop the loop), offering the cleanup;
+  - merged or closed (the final one), offering the cleanup. Then
+    `unwatch_pull_request`, stop the loop, and on t3 settle your own thread:
+    `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
+    ends). The caller forgets you on this event (session-manager "Stopping on t3");
   - stuck: auth failure, API errors on two runs in a row, or a blocked dialog.
   The calling session relays them; you never ask the user directly.
 
@@ -227,12 +230,15 @@ pane; see "Where it runs". Pace:
 - a review batch still open: about 10 minutes;
 - idle, waiting on reviewers: about 30 minutes;
 - when the MR is merged or closed, sync the ticket one last time (done on a
-  merge to main), then stop the loop and say so.
+  merge to main), send the final event, then stop the loop and settle the
+  thread (see "Where it runs").
 
 The self-paced wakeup lives in the helper's process: if the harness ends the
 process, the next check is lost and nothing reports it. On t3 the
 `watch_pull_request` watch survives that and wakes the thread on checks,
 comments, reviews and conflicts, but not on a merge. Catch-up covers the merge.
+Don't count on T3 settling a linked thread when its PR merges: that is the
+user's `sidebarAutoSettleOnMerge` setting, and it may be off.
 
 ### Catch-up
 
@@ -245,7 +251,9 @@ When a watch starts, list the watches that went quiet before their MR finished:
 It prints one JSON line per state file not checked in the last hour whose MR
 has since merged or closed (GitLab only). For each: run ticket-manager's
 **Sync** for every ticket listed, with the state, `merged_into` and `sha` it
-printed; then `stale-watches.sh --mark <watch>` so it isn't reported again, and
+printed. If `$SM status --feature mr-<iid>` still lists `mr-<iid>-monitor`,
+close it as a finished monitor (session-manager "Stopping on t3": settle, then
+forget). Then `stale-watches.sh --mark <watch>` so it isn't reported again, and
 tell the user in one line, e.g. `!42 merged while unwatched; ACME-1 → done`.
 
 Each run is one snapshot plus triage; the state file keeps runs from repeating.
