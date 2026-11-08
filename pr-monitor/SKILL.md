@@ -40,9 +40,12 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   - first message: `/loop pr-monitor <mr-url> — you are the monitor helper; report events to <session-manager self()>`;
   - one monitor per MR: if `status(mr-<iid>)` shows `mr-<iid>-monitor` live,
     reuse it and say so;
+  - first run "Catch-up" below, so an MR that merged while nothing watched it
+    still gets its ticket synced;
   - it is a child of the calling session and ends with it.
-- **When you are the monitor helper** (your first message says so): runs are
-  silent in your pane; send the caller (session-manager `report_command`) only
+- **When you are the monitor helper** (your first message says so): on t3, call
+  `watch_pull_request` with the MR URL on your first run, and
+  `unwatch_pull_request` when you stop the loop. Runs are silent in your pane; send the caller (session-manager `report_command`) only
   these events, one line each, prefixed `mr-<iid> event:`
   - drafted (with the reasons) or looks ready to undraft;
   - a review batch settled (see "Peer review comments");
@@ -226,6 +229,25 @@ pane; see "Where it runs". Pace:
 - when the MR is merged or closed, sync the ticket one last time (done on a
   merge to main), then stop the loop and say so.
 
+The self-paced wakeup lives in the helper's process: if the harness ends the
+process, the next check is lost and nothing reports it. On t3 the
+`watch_pull_request` watch survives that and wakes the thread on checks,
+comments, reviews and conflicts, but not on a merge. Catch-up covers the merge.
+
+### Catch-up
+
+When a watch starts, list the watches that went quiet before their MR finished:
+
+```bash
+~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh
+```
+
+It prints one JSON line per state file not checked in the last hour whose MR
+has since merged or closed (GitLab only). For each: run ticket-manager's
+**Sync** for every ticket listed, with the state, `merged_into` and `sha` it
+printed; then `stale-watches.sh --mark <watch>` so it isn't reported again, and
+tell the user in one line, e.g. `!42 merged while unwatched; ACME-1 → done`.
+
 Each run is one snapshot plus triage; the state file keeps runs from repeating.
 Report only what is new unless the user asks for the full picture.
 
@@ -241,7 +263,8 @@ Report only what is new unless the user asks for the full picture.
 - **Head moved during the run:** re-snapshot before drafting, so you never draft
   on findings for an old sha.
 - **Monitor helper exits or is killed:** the calling session gets the exit
-  notice; say the watch stopped and offer to restart it. State on disk means a
+  notice, when there is one; say the watch stopped and offer to restart it. A
+  process ended by the harness gives no notice; Catch-up finds those. State on disk means a
   restart repeats no reports.
 
 ## When the output misses
