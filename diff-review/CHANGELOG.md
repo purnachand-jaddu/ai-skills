@@ -1,5 +1,6 @@
 # diff-review changelog
 
+- 2026-11-08: a boolean-returning function reads as a predicate at its call site (`shouldRunCases()`, not `runsCases()`), reported as Minor; from a review comment that renamed such an interface method.
 - 2026-11-04: a timing-dependent test waits on a condition (every backend blocked behind the holder), not on which statement blocks. The race test filtered waiters by query text and flaked in CI.
 2026-11-06: shortened wording, no rule changed; user asked for fewer words
 2026-11-06: lenses now cover discoverable inputs, flags with no caller, repeated branching on one value, names that hide what code does, and layout vs sibling modules; a reader or maintainer cost counts as a scenario, capped at Should fix; a human reviewer caught these by hand
