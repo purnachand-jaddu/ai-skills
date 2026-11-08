@@ -36,7 +36,9 @@ more file in `backends/`; no skill changes.
 **Stopping on t3:** `forget` drops the helper but leaves its thread in the sidebar, so
 close the thread first, with the `address` from `start` or `status`: T3's
 `t3_thread_interrupt` (`stop: true`) if it is still running, `t3_thread_organize`
-(`archive`), then `$SM forget <name>`. Those tools unavailable: forget it anyway and
+(`archive`; `settle` for a monitor whose MR merged or closed, so it stays findable),
+then `$SM forget <name>`. A thread can settle itself (no `threadId`), applied when
+its turn ends. Those tools unavailable: forget it anyway and
 say the thread stays in the sidebar.
 
 **Agents:** launch argv per agent type in `session_manager/agents.toml`; notes
