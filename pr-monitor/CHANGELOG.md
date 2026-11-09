@@ -1,3 +1,4 @@
+2026-11-09: resolve simple conflicts with the target on its own, as a merge commit pushed without force after tests and a diff-review; anything else still drafts and offers a sync. A one-line conflict where both intents were obvious only got a Draft and an offer
 2026-11-08: on t3, a monitor settles its own thread after the final merged/closed event, and Catch-up settles and forgets a dead monitor; a monitor thread stayed unsettled after its MR merged
 2026-11-08: on t3, watch the MR with T3's own PR watch, and catch up on MRs that merged after their watch went quiet; an MR merged unwatched and its ticket stayed in-review
 2026-11-06: always give the ticket's full link, not its key or title alone (asking, creating, reporting, MR description); user wanted the whole link
