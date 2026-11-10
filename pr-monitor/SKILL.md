@@ -258,10 +258,9 @@ user's worktree.
 7. **Report** the new head, conflicts resolved and test results. The next monitor
    run reviews the new head on its own.
 
-**After a merge,** the final event offers the cleanup. On a yes: confirm the
-worktree has no uncommitted changes, then `git worktree remove <path>` and
-`git branch -d <branch>`. Nothing is removed unasked, and `-D` needs its own yes.
-With a stacked child MR open, offer step 3 for it too.
+**After a merge,** Close-out removes the worktrees and branches that pass its
+check; anything that fails it stays, and removing it needs a yes. With a stacked
+child MR open, offer step 3 for it too.
 
 ## Watching over time
 
@@ -304,13 +303,25 @@ The calling session's job, for each MR that merged or closed, however it learned
 1. **Ticket:** `stale-watches.sh --sync` (done on a fixes MR merged to main).
 2. **Monitor and reviewers:** every helper in `$SM status --feature mr-<iid>`:
    session-manager "Stopping on t3" (settle the monitor, archive reviewers),
-   then `$SM forget`, which removes its worktree.
+   then `$SM forget`. Forget force-removes the helper's worktree, so run the
+   worktree check (step 4) on it first; a failed check keeps the helper.
 3. **The feature's pair helper:** if no other open MR of yours uses it, end it
    (pair-programming "End a feature"; a merge needs no question). Otherwise
    keep it and say which MR still does.
-4. `stale-watches.sh --mark <watch>`, then one line to the user, e.g.
-   `!42 merged: ACME-1 → done; monitor settled; pair helper ended`. Offer the
-   branch worktree cleanup ("Syncing with main", After a merge).
+4. **Worktrees and branches,** without asking, when merged (not closed): the
+   helpers' and the MR branch's own. For each, after `git fetch origin
+   <target> merge-requests/<iid>/head` (GitHub: `pull/<n>/head`), it is safe when
+   both hold:
+   - `git -C <worktree> status --porcelain` prints nothing;
+   - its `HEAD` is in the target (`git merge-base --is-ancestor HEAD
+     origin/<target>`) or, after a squash merge, in the MR head
+     (`git merge-base --is-ancestor HEAD <head_sha>`, `head_sha` from Catch-up).
+
+   Safe: `git worktree remove <path>`, then `git branch -D <branch>`. `-D`
+   because `-d` judges against the local HEAD (wrong in a bare clone); the
+   check above is the guard. Not safe: keep it and say why.
+5. `stale-watches.sh --mark <watch>`, then one line to the user, e.g.
+   `!42 merged: ACME-1 → done; monitor settled; pair helper ended; 3 worktrees removed`.
 
 **Heartbeat**, so a ticket moves even when no agent is alive: a user cron or
 launchd job running `stale-watches.sh --sync` every 5 minutes. Set it up only
