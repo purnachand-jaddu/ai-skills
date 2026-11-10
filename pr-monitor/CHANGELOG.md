@@ -1,3 +1,4 @@
+2026-11-10: also merge the target in when the MR is behind and overlaps it (files both sides changed), once per target head, not mid-pipeline, and not on an approved MR whose approvals a push resets; behind with no overlap is only reported past 50 commits. An MR sat 17 commits behind with silent overlap until a manual rebase hit two conflicts
 2026-11-10: undrafting needs the user's yes for that MR, binding the calling session too, and a blanket "decide yourself" doesn't cover it; a caller undrafted an MR under a standing delegation
 2026-11-10: a caller's nudge after a push triggers a check and a review of the new head at once, reusing the caller's review report for that sha; user had to ask for re-reviews
 2026-11-10: Close-out removes the MR's and helpers' worktrees and branches without asking once each is clean and contained in the target or the MR head; user wanted provably safe cleanup automatic, not offered

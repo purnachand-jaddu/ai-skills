@@ -12,15 +12,15 @@ description: >-
   in-review, done on merge to main). Started automatically by pr-raise and
   pr-takeover. Watches run in their own helper agent beside the user's
   session (session-manager), messaging the session only on events; batches a
-  reviewer's comments and offers a pr-takeover handoff. Resolves simple conflicts
-  with the target on its own (a merge commit, no force push); on request, syncs
+  reviewer's comments and offers a pr-takeover handoff. Merges the target in on
+  its own when it conflicts simply or overlaps the MR (a merge commit, no force push); on request, syncs
   the branch with main (rebase, conflicts, stacked MRs) and cleans up after a merge.
   Use when the user says "monitor this PR", "watch MR 858", "keep an eye on the
   PR", "pr-monitor", "tell me if CI or review comments need attention", "rebase
   with main", "pull changes from main", "fix the merge conflicts", "first MR is
   merged, update the second", "this is merged, remove the worktree", or runs it
   under /loop to poll an MR. Never merges, resolves threads or replies; pushes only a
-  feature branch: a simple-conflict merge, or a sync when asked.
+  feature branch: a merge of the target, or a sync when asked.
 ---
 
 # Monitor PR
@@ -55,8 +55,8 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
     user and waits for a yes);
   - a review batch settled (see "Peer review comments");
   - ticket moved;
-  - conflicts with the target resolved and pushed ("Resolving simple
-    conflicts"), with the new head and what each hunk kept;
+  - the target merged in and pushed ("Merging in the target"), with the new
+    head and what each hunk kept; or behind with overlap but not merged, and why;
   - conflicts that aren't simple, or a parent MR merged: offer a sync;
   - merged or closed (the final one); the caller runs "Close-out". Then
     `unwatch_pull_request`, stop the loop, and on t3 settle your own thread:
@@ -75,8 +75,8 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   else outward-facing needs a yes: comments, replying to or resolving threads,
   retrying jobs, editing the description, labels, reviewers.
 - **Never** merge, approve or undraft on your own, or push except a requested
-  sync ("Syncing with main") or a merge commit that resolves simple conflicts
-  ("Resolving simple conflicts"). Never push to `main` or the target branch.
+  sync ("Syncing with main") or a merge commit of the target
+  ("Merging in the target"). Never push to `main` or the target branch.
 - **Undraft only on the user's yes for that MR** (`glab mr update <iid> --ready`,
   `gh pr ready <n>`). This binds the calling session too, and a standing "decide
   yourself" doesn't cover it: ask, even when everything else is delegated.
@@ -174,7 +174,7 @@ once:
 
 ## 3. Act
 
-- **Conflicts with the target:** first try "Resolving simple conflicts". Pushed:
+- **Conflicts with the target:** first try "Merging in the target". Pushed:
   the conflict is no longer an issue. Not simple: it is a valid issue, as below.
 - **Any valid issue and the MR is not Draft:** mark it Draft, then record why.
   - GitLab: `glab mr update <iid> --draft`
@@ -205,22 +205,33 @@ Not counted: 1 nit (naming), coverage not reported by this pipeline
 Ticket https://kaneo.example/acme/task/ACME-154: in-review → in-progress (commented)
 ```
 
-## Resolving simple conflicts
+## Merging in the target
 
 The one push a run makes on its own, by the monitor helper or a one-off check.
+**When:** the MR conflicts with its target, or it is behind and overlaps it:
+the target changed, since the merge base, a file the MR also changes
+(`git diff --name-only $(git merge-base origin/<target> origin/<branch>)` against
+each side), or the forge says it needs a rebase. Behind with no overlap changes
+nothing a reviewer sees; only report it, once, past 50 commits behind.
+**Not when** a pipeline on the current head is still running, this target head
+was already merged in or declined (`target_synced` in the state file), or the
+MR is approved and a push resets approvals (GitLab `projects/<id>/approvals`
+`reset_approvals_on_push`; GitHub branch protection `dismiss_stale_reviews`):
+report "behind with overlap" and let the user decide. Nor when the repo requires
+linear history or rebases (`CLAUDE.md`, `CONTRIBUTING`, MR settings).
+
 It adds a merge commit and never rewrites history, so it can't clobber another
 pusher: a plain push only fast-forwards, and a rejection means someone pushed.
 
-**Simple means all of these:**
-- the only problem is conflicts with the MR's own target (not a merged parent MR);
+**A conflict is simple when all of these hold** (a merge with no conflict is
+always fine):
+- the conflicts are with the MR's own target (not a merged parent MR);
 - a few small hunks (about 10 lines a side), in source files: not lockfiles,
   generated files, migrations, or a file deleted or renamed on one side;
 - each hunk keeps both intents mechanically, e.g. the MR renamed a call and the
   target changed one of its arguments: keep the new call, with the new argument;
 - no hunk changes a signature, API, schema or config key, or needs a judgement
-  about which behaviour wins;
-- the repo doesn't require linear history or rebases (`CLAUDE.md`,
-  `CONTRIBUTING`, MR settings).
+  about which behaviour wins.
 
 Anything else: Draft and offer "Syncing with main", as before.
 
@@ -234,8 +245,8 @@ Anything else: Draft and offer "Syncing with main", as before.
    before merge: abandon and fall back, reporting why.
 4. **Push** `git push origin HEAD:refs/heads/<branch>`: a plain push, no force.
    Rejected: someone pushed since step 1; abandon and let the next run look again.
-5. **Clean up** the worktree, then send the event: the new head, each file and
-   what it kept, test results. Tell the caller to `git pull --ff-only` in the
+5. **Clean up** the worktree, record `target_synced` (the target sha), then send
+   the event: the new head, each file and what it kept, test results. Tell the caller to `git pull --ff-only` in the
    branch's worktree before its next commit. The next run reviews the new head.
 
 ## Syncing with main
