@@ -42,7 +42,10 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   - one monitor per MR: if `status(mr-<iid>)` shows `mr-<iid>-monitor` live,
     reuse it and say so;
   - first run "Catch-up" below, so an MR that merged while nothing watched it
-    still gets its ticket synced;
+    is closed out;
+  - run Catch-up again on every event from a monitor and when you resume after
+    a restart, and "Close-out" as soon as you learn an MR of yours merged or
+    closed, from any source;
   - it is a child of the calling session and ends with it.
 - **When you are the monitor helper** (your first message says so): on t3, call
   `watch_pull_request` with the MR URL on your first run, and
@@ -54,7 +57,7 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   - conflicts with the target resolved and pushed ("Resolving simple
     conflicts"), with the new head and what each hunk kept;
   - conflicts that aren't simple, or a parent MR merged: offer a sync;
-  - merged or closed (the final one), offering the cleanup. Then
+  - merged or closed (the final one); the caller runs "Close-out". Then
     `unwatch_pull_request`, stop the loop, and on t3 settle your own thread:
     `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
     ends). The caller forgets you on this event (session-manager "Stopping on t3");
@@ -267,6 +270,8 @@ pane; see "Where it runs". Pace:
 
 - pipeline running or pending: check again in about 5-10 minutes;
 - a review batch still open: about 10 minutes;
+- looks ready (green, no valid issues) or approved: about 5 minutes, since a
+  merge usually comes next;
 - idle, waiting on reviewers: about 30 minutes;
 - when the MR is merged or closed, sync the ticket one last time (done on a
   merge to main), send the final event, then stop the loop and settle the
@@ -281,19 +286,35 @@ user's `sidebarAutoSettleOnMerge` setting, and it may be off.
 
 ### Catch-up
 
-When a watch starts, list the watches that went quiet before their MR finished:
+List every watched MR that merged or closed and isn't closed out yet:
 
 ```bash
-~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh
+~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh          # list
+~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh --sync   # list and sync their tickets
 ```
 
-It prints one JSON line per state file not checked in the last hour whose MR
-has since merged or closed (GitLab only). For each: run ticket-manager's
-**Sync** for every ticket listed, with the state, `merged_into` and `sha` it
-printed. If `$SM status --feature mr-<iid>` still lists `mr-<iid>-monitor`,
-close it as a finished monitor (session-manager "Stopping on t3": settle, then
-forget). Then `stale-watches.sh --mark <watch>` so it isn't reported again, and
-tell the user in one line, e.g. `!42 merged while unwatched; ACME-1 → done`.
+One JSON line per MR (GitLab only); `--sync` runs ticket-manager's **Sync** for
+each ticket not already synced to the final state. Run "Close-out" for each.
+
+### Close-out
+
+The calling session's job, for each MR that merged or closed, however it learned
+(the final event, Catch-up, a linked PR's state, the user):
+
+1. **Ticket:** `stale-watches.sh --sync` (done on a fixes MR merged to main).
+2. **Monitor and reviewers:** every helper in `$SM status --feature mr-<iid>`:
+   session-manager "Stopping on t3" (settle the monitor, archive reviewers),
+   then `$SM forget`, which removes its worktree.
+3. **The feature's pair helper:** if no other open MR of yours uses it, end it
+   (pair-programming "End a feature"; a merge needs no question). Otherwise
+   keep it and say which MR still does.
+4. `stale-watches.sh --mark <watch>`, then one line to the user, e.g.
+   `!42 merged: ACME-1 → done; monitor settled; pair helper ended`. Offer the
+   branch worktree cleanup ("Syncing with main", After a merge).
+
+**Heartbeat**, so a ticket moves even when no agent is alive: a user cron or
+launchd job running `stale-watches.sh --sync` every 5 minutes. Set it up only
+on the user's yes; without it, Close-out waits for the next event or resume.
 
 Each run is one snapshot plus triage; the state file keeps runs from repeating.
 Report only what is new unless the user asks for the full picture.

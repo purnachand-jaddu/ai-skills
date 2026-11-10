@@ -107,7 +107,9 @@ before fixing it; list the ones you reject and why.
 ## End a feature
 
 On "done with the feature" (or the user closing it): list the feature's helpers
-(`status`), ask, then `stop` each and offer to remove the helper worktree.
+(`status`), ask, then `stop` each and offer to remove the helper worktree. When
+pr-monitor's Close-out finds the feature's last open MR merged or closed, end
+them without asking and say so.
 Result files in `~/.agent-sessions/<feature>/` stay.
 
 ## When the output misses
