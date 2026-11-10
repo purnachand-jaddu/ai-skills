@@ -1,3 +1,4 @@
+2026-11-10: undrafting needs the user's yes for that MR, binding the calling session too, and a blanket "decide yourself" doesn't cover it; a caller undrafted an MR under a standing delegation
 2026-11-10: a caller's nudge after a push triggers a check and a review of the new head at once, reusing the caller's review report for that sha; user had to ask for re-reviews
 2026-11-10: Close-out removes the MR's and helpers' worktrees and branches without asking once each is clean and contained in the target or the MR head; user wanted provably safe cleanup automatic, not offered
 2026-11-10: Close-out after a merge (ticket, monitor and reviewers, pair helper), run by the caller on any news of a merge; Catch-up no longer waits an hour and runs on every event; --sync and an optional heartbeat; 5-minute pace once the MR looks ready. A merged MR sat 30 minutes with its ticket in-review and its helpers alive

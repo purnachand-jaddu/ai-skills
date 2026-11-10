@@ -51,7 +51,8 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   `watch_pull_request` with the MR URL on your first run, and
   `unwatch_pull_request` when you stop the loop. Runs are silent in your pane; send the caller (session-manager `report_command`) only
   these events, one line each, prefixed `mr-<iid> event:`
-  - drafted (with the reasons) or looks ready to undraft;
+  - drafted (with the reasons) or looks ready to undraft (the caller asks the
+    user and waits for a yes);
   - a review batch settled (see "Peer review comments");
   - ticket moved;
   - conflicts with the target resolved and pushed ("Resolving simple
@@ -75,8 +76,10 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   retrying jobs, editing the description, labels, reviewers.
 - **Never** merge, approve or undraft on your own, or push except a requested
   sync ("Syncing with main") or a merge commit that resolves simple conflicts
-  ("Resolving simple conflicts"). Never push to `main` or the target branch. Mark ready only when the user says so
-  (`glab mr update <iid> --ready`, `gh pr ready <n>`).
+  ("Resolving simple conflicts"). Never push to `main` or the target branch.
+- **Undraft only on the user's yes for that MR** (`glab mr update <iid> --ready`,
+  `gh pr ready <n>`). This binds the calling session too, and a standing "decide
+  yourself" doesn't cover it: ask, even when everything else is delegated.
 - **Verify before you count.** A comment, red job or coverage dip is a signal,
   not a verdict: read the code, the log, the numbers. Only a verified problem
   drafts the MR.
