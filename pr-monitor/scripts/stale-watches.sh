@@ -22,7 +22,7 @@ for f in "$STATE_DIR"/<->-<->.json(N); do
   name=${f:t:r}; pid=${name%-*}; iid=${name#*-}
   mr=$(glab api "projects/$pid/merge_requests/$iid" 2>/dev/null) || { jq -nc --arg w "$name" '{watch: $w, error: "MR not readable"}'; continue; }
   line=$(jq -c --arg w "$name" --slurpfile s "$f" 'select(.state == "merged" or .state == "closed") | {
-      watch: $w, iid, url: .web_url, state, merged_into: .target_branch, sha: (.merge_commit_sha // .squash_commit_sha // .sha),
+      watch: $w, iid, url: .web_url, state, merged_into: .target_branch, sha: (.merge_commit_sha // .squash_commit_sha // .sha), head_sha: .sha,
       merged_at, closed_at, last_checked: $s[0].checked_at,
       tickets: ([($s[0].tickets // {}) | to_entries[] | {key, relation: .value.relation, last: .value.last_mr_state}] + [$s[0].ticket // empty | {key: .id, relation, last: .last_mr_state}] | unique_by(.key))
     }' <<<"$mr")
