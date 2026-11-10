@@ -12,14 +12,15 @@ description: >-
   in-review, done on merge to main). Started automatically by pr-raise and
   pr-takeover. Watches run in their own helper agent beside the user's
   session (session-manager), messaging the session only on events; batches a
-  reviewer's comments and offers a pr-takeover handoff. On request, syncs the
-  branch with main (rebase, conflicts, stacked MRs) and cleans up after a merge.
+  reviewer's comments and offers a pr-takeover handoff. Resolves simple conflicts
+  with the target on its own (a merge commit, no force push); on request, syncs
+  the branch with main (rebase, conflicts, stacked MRs) and cleans up after a merge.
   Use when the user says "monitor this PR", "watch MR 858", "keep an eye on the
   PR", "pr-monitor", "tell me if CI or review comments need attention", "rebase
   with main", "pull changes from main", "fix the merge conflicts", "first MR is
   merged, update the second", "this is merged, remove the worktree", or runs it
-  under /loop to poll an MR. Never merges, resolves or replies; pushes only a
-  feature branch, only when asked to sync.
+  under /loop to poll an MR. Never merges, resolves threads or replies; pushes only a
+  feature branch: a simple-conflict merge, or a sync when asked.
 ---
 
 # Monitor PR
@@ -50,7 +51,9 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   - drafted (with the reasons) or looks ready to undraft;
   - a review batch settled (see "Peer review comments");
   - ticket moved;
-  - conflicts with the target, or a parent MR merged: offer a sync;
+  - conflicts with the target resolved and pushed ("Resolving simple
+    conflicts"), with the new head and what each hunk kept;
+  - conflicts that aren't simple, or a parent MR merged: offer a sync;
   - merged or closed (the final one), offering the cleanup. Then
     `unwatch_pull_request`, stop the loop, and on t3 settle your own thread:
     `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
@@ -65,7 +68,8 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   else outward-facing needs a yes: comments, replying to or resolving threads,
   retrying jobs, editing the description, labels, reviewers.
 - **Never** merge, approve or undraft on your own, or push except a requested
-  sync ("Syncing with main"). Mark ready only when the user says so
+  sync ("Syncing with main") or a merge commit that resolves simple conflicts
+  ("Resolving simple conflicts"). Never push to `main` or the target branch. Mark ready only when the user says so
   (`glab mr update <iid> --ready`, `gh pr ready <n>`).
 - **Verify before you count.** A comment, red job or coverage dip is a signal,
   not a verdict: read the code, the log, the numbers. Only a verified problem
@@ -161,6 +165,8 @@ once:
 
 ## 3. Act
 
+- **Conflicts with the target:** first try "Resolving simple conflicts". Pushed:
+  the conflict is no longer an issue. Not simple: it is a valid issue, as below.
 - **Any valid issue and the MR is not Draft:** mark it Draft, then record why.
   - GitLab: `glab mr update <iid> --draft`
   - GitHub: `gh pr ready <n> --undo`
@@ -190,10 +196,43 @@ Not counted: 1 nit (naming), coverage not reported by this pipeline
 Ticket https://kaneo.example/acme/task/ACME-154: in-review → in-progress (commented)
 ```
 
+## Resolving simple conflicts
+
+The one push a run makes on its own, by the monitor helper or a one-off check.
+It adds a merge commit and never rewrites history, so it can't clobber another
+pusher: a plain push only fast-forwards, and a rejection means someone pushed.
+
+**Simple means all of these:**
+- the only problem is conflicts with the MR's own target (not a merged parent MR);
+- a few small hunks (about 10 lines a side), in source files: not lockfiles,
+  generated files, migrations, or a file deleted or renamed on one side;
+- each hunk keeps both intents mechanically, e.g. the MR renamed a call and the
+  target changed one of its arguments: keep the new call, with the new argument;
+- no hunk changes a signature, API, schema or config key, or needs a judgement
+  about which behaviour wins;
+- the repo doesn't require linear history or rebases (`CLAUDE.md`,
+  `CONTRIBUTING`, MR settings).
+
+Anything else: Draft and offer "Syncing with main", as before.
+
+1. **Scratch worktree at the MR head**, never the user's: `git fetch origin`, then
+   `git worktree add --detach <tmp> origin/<branch>`. Note that sha.
+2. **Merge** `git merge --no-ff origin/<target>`; resolve each hunk, keeping both
+   intents. Any hunk turns out not simple: `git merge --abort`, remove the
+   worktree, fall back.
+3. **Verify.** Build and test the changed modules; then `diff-review` the merge
+   commit (`git diff HEAD^1 HEAD`, the conflict files). A failure or a Fix
+   before merge: abandon and fall back, reporting why.
+4. **Push** `git push origin HEAD:refs/heads/<branch>`: a plain push, no force.
+   Rejected: someone pushed since step 1; abandon and let the next run look again.
+5. **Clean up** the worktree, then send the event: the new head, each file and
+   what it kept, test results. Tell the caller to `git pull --ff-only` in the
+   branch's worktree before its next commit. The next run reviews the new head.
+
 ## Syncing with main
 
-Only when the user asks or says yes to an offer. A run that finds conflicts or a
-merged parent MR offers it and never syncs on its own. **The calling session does
+Only when the user asks or says yes to an offer. A run that finds conflicts that
+aren't simple, or a merged parent MR, offers it and never syncs on its own. **The calling session does
 the sync, not the monitor helper**, so one agent pushes to the branch, in the
 user's worktree.
 
@@ -268,6 +307,9 @@ Report only what is new unless the user asks for the full picture.
   could not be drafted.
 - **Rebase stops part-way and can't be finished:** `git rebase --abort`, so the
   branch is exactly as it was; report the conflict.
+- **Conflict resolution abandoned** (not simple, red tests, a Fix before merge,
+  a rejected push): nothing was pushed; Draft and offer the sync as before, with
+  the reason.
 - **Head moved during the run:** re-snapshot before drafting, so you never draft
   on findings for an old sha.
 - **Monitor helper exits or is killed:** the calling session gets the exit
