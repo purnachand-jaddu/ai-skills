@@ -1,0 +1,1 @@
+- 2026-11-10: new skill, a name for PR reviews that hands the work to diff-review; user wanted a pr- skill for reviews
