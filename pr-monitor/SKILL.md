@@ -63,6 +63,9 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
     ends). The caller forgets you on this event (session-manager "Stopping on t3");
   - stuck: auth failure, API errors on two runs in a row, or a blocked dialog.
   The calling session relays them; you never ask the user directly.
+- **A `mr-<iid> nudge` from the caller** (a push): run a check now and start the
+  new head's review without waiting for its pipeline. A review report it names
+  for that sha counts as the review; read it instead of starting a reviewer.
 
 ## Ground rules
 

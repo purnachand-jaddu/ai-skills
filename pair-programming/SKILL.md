@@ -98,6 +98,12 @@ ends (`git worktree remove`), after asking.
 5. **Otherwise don't push.** Show the findings. If the user said "fix" too, fix
    them and review again, at most twice, then stop and ask.
 
+**After any push to a branch with an open MR** (this flow or any other), nudge
+its monitor if `$SM status --feature mr-<iid>` lists `mr-<iid>-monitor`:
+`$SM delegate mr-<iid>-monitor` with `mr-<iid> nudge: pushed <sha>`, plus the
+review report's path when step 2 covered that sha. It reviews the new head at
+once instead of on its next timed check.
+
 ## Bringing results back
 
 Per result, tell the user in at most three lines: the verdict, what you will do
