@@ -14,6 +14,7 @@ flowchart TD
     takeover[pr-takeover]
     pair[pair-programming]
     monitor[pr-monitor]
+    prreview[pr-review]
   end
   subgraph fleet["Fleet: headless workers"]
     setup[fleet-setup]
@@ -37,6 +38,7 @@ flowchart TD
   takeover -->|reviewer| review
   takeover -->|helpers| sessions
   pair -->|reviewer| review
+  prreview -->|delegates| review
   pair -->|helpers| sessions
 
   setup -->|schedules ticks| dispatcher
