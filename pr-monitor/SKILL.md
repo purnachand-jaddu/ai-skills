@@ -13,7 +13,8 @@ description: >-
   pr-takeover. Watches run in their own helper agent beside the user's
   session (session-manager), messaging the session only on events; batches a
   reviewer's comments and offers a pr-takeover handoff. Merges the target in on
-  its own when it conflicts simply or overlaps the MR (a merge commit, no force push); on request, syncs
+  its own when it conflicts simply or overlaps the MR (a merge commit, no force push),
+  and retargets a stacked MR whose parent merged; on request, syncs
   the branch with main (rebase, conflicts, stacked MRs) and cleans up after a merge.
   Use when the user says "monitor this PR", "watch MR 858", "keep an eye on the
   PR", "pr-monitor", "tell me if CI or review comments need attention", "rebase
@@ -57,7 +58,9 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   - ticket moved;
   - the target merged in and pushed ("Merging in the target"), with the new
     head and what each hunk kept; or behind with overlap but not merged, and why;
-  - conflicts that aren't simple, or a parent MR merged: offer a sync;
+  - conflicts that aren't simple: offer a sync;
+  - parent MR merged: retargeted and the target merged in, or why not
+    ("Stacked on a merged parent");
   - merged or closed (the final one); the caller runs "Close-out". Then
     `unwatch_pull_request`, stop the loop, and on t3 settle your own thread:
     `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
@@ -70,8 +73,9 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
 
 ## Ground rules
 
-- **The automatic writes are Draft and the ticket.** Drafting on a valid issue,
-  and ticket-manager's status moves and comments, are pre-authorised. Everything
+- **The automatic writes are Draft, the ticket, and retargeting a stacked MR
+  whose parent merged.** Drafting on a valid issue, ticket-manager's status moves
+  and comments, and that retarget are pre-authorised. Everything
   else outward-facing needs a yes: comments, replying to or resolving threads,
   retrying jobs, editing the description, labels, reviewers.
 - **Never** merge, approve or undraft on your own, or push except a requested
@@ -249,10 +253,23 @@ Anything else: Draft and offer "Syncing with main", as before.
    the event: the new head, each file and what it kept, test results. Tell the caller to `git pull --ff-only` in the
    branch's worktree before its next commit. The next run reviews the new head.
 
+### Stacked on a merged parent
+
+When the MR's target, now or at the last run (`target` in the state file), is
+the source branch of an MR that merged (not closed):
+1. **Retarget** to the parent's target, unless the forge already did:
+   `glab mr update <iid> --target-branch <parent target>`,
+   `gh pr edit <n> --base <parent target>`.
+2. **Merge in the new target** ("Merging in the target"), overlap or not: until
+   then the diff also shows the parent's commits. Same guards, same fallback.
+   After a squash merge, lines the parent added and this MR edited conflict;
+   that isn't simple, so it falls back to "Syncing with main" step 3.
+3. Record `target`, then send one event: retargeted, merged in (new head), or why not.
+
 ## Syncing with main
 
 Only when the user asks or says yes to an offer. A run that finds conflicts that
-aren't simple, or a merged parent MR, offers it and never syncs on its own. **The calling session does
+aren't simple, or a merged parent it couldn't merge in, offers it and never syncs on its own. **The calling session does
 the sync, not the monitor helper**, so one agent pushes to the branch, in the
 user's worktree.
 
@@ -276,8 +293,8 @@ user's worktree.
    run reviews the new head on its own.
 
 **After a merge,** Close-out removes the worktrees and branches that pass its
-check; anything that fails it stays, and removing it needs a yes. With a stacked
-child MR open, offer step 3 for it too.
+check; anything that fails it stays, and removing it needs a yes. A stacked child
+MR's monitor handles it ("Stacked on a merged parent"); with no monitor on it, offer step 3.
 
 ## Watching over time
 
