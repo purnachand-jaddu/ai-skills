@@ -54,8 +54,10 @@ review to one fresh reviewer so only its report comes back. Inputs: `<feature>`
 (the caller's, else `review`), agent (`claude` unless one is named), report file
 (default `~/.agent-sessions/<feature>/review-<n>.md`), `--hidden` if the caller says.
 
-1. **Scratch tree** at the commit under review, never the user's:
-   `git worktree add --detach ../<repo>-<feature>-review-<n> <sha>`. Uncommitted
+1. **Scratch tree** at the commit under review, never the user's, inside the
+   repo folder so T3 can start a thread in it: `git worktree add --detach
+   <repo>/.worktrees/<feature>-review-<n> <sha>`, with `/.worktrees/` in
+   `$(git rev-parse --git-common-dir)/info/exclude`. Uncommitted
    work: `git diff HEAD > ~/.agent-sessions/<feature>/review-<n>.patch`, `git -C
    <tree> apply` it, and copy untracked files in.
 2. **Start** with session-manager: `$SM start --feature <feature> --role reviewer

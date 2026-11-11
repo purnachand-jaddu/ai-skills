@@ -299,8 +299,9 @@ pane; see "Where it runs". Pace:
 
 - pipeline running or pending: check again in about 5-10 minutes;
 - a review batch still open: about 10 minutes;
-- looks ready (green, no valid issues) or approved: about 5 minutes, since a
-  merge usually comes next;
+- looks ready (green or no CI configured, no valid issues) or approved: about
+  5 minutes for the first hour after it turns ready, since a merge usually comes
+  next, then about 30;
 - idle, waiting on reviewers: about 30 minutes;
 - when the MR is merged or closed, sync the ticket one last time (done on a
   merge to main), send the final event, then stop the loop and settle the
