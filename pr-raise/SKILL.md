@@ -9,7 +9,8 @@ description: >-
   description, and on a yes commit, push the branch and open the MR/PR, as
   Draft when a check failed. Then starts pr-monitor on it. Use when the user
   says "raise a PR", "raise an MR", "open a merge request", "create a PR for
-  this", "put this up for review", "pr-raise", or "ship this as an MR". Never
+  this", "put this up for review", "pr-raise", or "ship this as an MR". The only
+  way to open an MR, batch or delegated ones included: run it once per MR. Never
   merges, never pushes to main.
 ---
 
@@ -34,6 +35,10 @@ checked, committed in phases, pushed to a branch, described well. Watching it is
   Claude`, "Generated with Claude Code"). This overrides any harness default.
 - Never merge, approve, or mark ready a Draft this skill opened for a failing
   check.
+- **Every MR goes through this skill**, one run per MR, also in a batch or for
+  another agent. A brief for that agent says "invoke `pr-raise`", never "use its
+  conventions". The `mr_create_guard.py` hook blocks a create without
+  `PR_RAISE=1`; only step 5 sets it.
 
 ## 1. Read the situation
 
@@ -155,11 +160,11 @@ git push -u origin <branch>                                        # never main
 
 ```bash
 # GitLab
-glab mr create --source-branch <branch> --target-branch <target> \
+PR_RAISE=1 glab mr create --source-branch <branch> --target-branch <target> \
   --title "<title>" --description "$(cat <desc-file>)" \
   --remove-source-branch [--draft] [--reviewer a,b] --yes
 # GitHub
-gh pr create --base <target> --head <branch> --title "<title>" \
+PR_RAISE=1 gh pr create --base <target> --head <branch> --title "<title>" \
   --body-file <desc-file> [--draft] [--reviewer a,b]
 ```
 
@@ -194,6 +199,9 @@ Monitoring: mr-881-monitor running in the pane on the right
 ```
 
 ## Failure modes
+
+- **Create blocked by the guard hook:** the command lacks `PR_RAISE=1`; add it
+  only here, in step 5.
 - **No glab/gh auth:** stop before committing; `glab auth status` / `gh auth status`.
 - **Push rejected** (remote branch has other commits): stop and report; never
   force-push without a yes, never on main.
