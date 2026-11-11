@@ -1,3 +1,4 @@
+2026-11-11: the reviewer's scratch tree goes in <repo>/.worktrees/, not ../; T3 refused to start a reviewer outside the project and every review fell back to the caller
 2026-11-11: a review runs in one fresh reviewer thread through session-manager, which reports and settles itself; the caller verifies the findings and cleans up. User wanted reviews off the main thread and the thread closed when done
 # diff-review changelog
 
