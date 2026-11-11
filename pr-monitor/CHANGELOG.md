@@ -1,3 +1,4 @@
+2026-11-11: a PR with no CI and no valid issues counts as looking ready, checked every ~5 minutes for its first hour, then ~30; a monitor read it as idle and missed a merge for 20 minutes
 2026-11-11: a review report named in the first message counts as that head's review, like a nudge's; pr-raise reviewed the head already
 2026-11-11: a new head's review goes through diff-review's reviewer thread instead of starting a reviewer here; one place starts reviewers
 2026-11-11: a stacked MR whose parent merged is retargeted to the parent's target and gets that target merged in on its own (merge commit, no force push); a squash-merge conflict still falls back to the offered rebase. A stacked MR waited on the user to retarget and pull main after its parent merged
