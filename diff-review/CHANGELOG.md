@@ -1,3 +1,4 @@
+2026-11-11: a review runs in one fresh reviewer thread through session-manager, which reports and settles itself; the caller verifies the findings and cleans up. User wanted reviews off the main thread and the thread closed when done
 # diff-review changelog
 
 - 2026-11-09: new Layers and phases lens: a phase-named step that branches on a platform or provider value already dispatched elsewhere, or a field that only carries state between two functions; Parity's single-`if` exemption no longer covers a value dispatched elsewhere. Missed by two reviews and a pair review of correct code.

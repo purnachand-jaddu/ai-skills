@@ -133,16 +133,11 @@ issue.
 Each new head gets a **fresh reviewer**: no bias from earlier reviews, and the
 monitor's context stays small:
 
-1. `git worktree add --detach ../<repo>-mr-<iid>-review-<n> <sha>`: never the
-   user's checkout.
-2. session-manager `start(mr-<iid>, reviewer, claude, cwd: that worktree)`, hidden
-   (no pane).
-   Task: "Load the `diff-review` skill and review `<sha>` against
-   `origin/<target>`; write the report to `~/.pr-monitor/<project>-<iid>-diff-<n>.md`."
-3. `collect()` its report, then `stop` the reviewer (on t3, session-manager's
-   "Stopping on t3", so its thread leaves the sidebar) and
-   `git worktree remove --force` the worktree.
-4. Record `review: {reviewed_sha, findings, file}` (one-line titles) in the state
+1. Run `diff-review` on `<sha>` against `origin/<target>`, through its
+   "Reviewer thread": feature `mr-<iid>`, hidden, report file
+   `~/.pr-monitor/<project>-<iid>-diff-<n>.md`. It starts the reviewer, verifies
+   the findings and cleans up.
+2. Record `review: {reviewed_sha, findings, file}` (one-line titles) in the state
    file, so the next run on the same head repeats nothing.
 
 One reviewer at a time: if the head moves during a review, let it finish, then
