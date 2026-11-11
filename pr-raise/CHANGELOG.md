@@ -1,3 +1,4 @@
+2026-11-11: runs one diff-review of the MR's changes before the plan and names its report in pr-monitor's first message; reviews start here, in pr-monitor and pr-takeover, or on request, not before every push. User saw three reviewer threads for one push
 2026-11-11: removed the headless run for fleet workers; the agent fleet skills were removed
 2026-11-06: always give the ticket's full link, not its key or title alone (asking, creating, reporting, MR description); user wanted the whole link
 2026-11-06: shortened wording, no rule changed; user asked for fewer words
