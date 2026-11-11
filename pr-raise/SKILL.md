@@ -7,8 +7,7 @@ description: >-
   house style, conflicts), link a ticket through ticket-manager, propose phased
   commits, a conventional title and a structured description, and on a yes
   commit, push the branch and open the MR/PR, as Draft when a check failed. Then
-  starts pr-monitor on it. Also the last step of a fleet worker, which runs it
-  headless. Use when the user says "raise a PR", "raise an MR", "open
+  starts pr-monitor on it. Use when the user says "raise a PR", "raise an MR", "open
   a merge request", "create a PR for this", "put this up for review", "pr-raise",
   or "ship this as an MR". Never merges, never pushes to main.
 ---
@@ -34,39 +33,6 @@ checked, committed in phases, pushed to a branch, described well. Watching it is
   Claude`, "Generated with Claude Code"). This overrides any harness default.
 - Never merge, approve, or mark ready a Draft this skill opened for a failing
   check.
-
-## Headless run
-
-`$FLEET_RUN_ID` is set: you are a fleet worker and nobody can answer, so a question
-stalls the run. The steps below still apply, with these changes:
-
-- **Step 1:** stay on the checked-out branch; the target is the one in your prompt.
-  Skip `detect-forge.sh`: `ship.py` handles the forge and your permissions deny it.
-- **Step 2:** the ticket is in your prompt. Ask nothing; no reviewers.
-- **Step 3:** fix what you broke. A check already failing on the target goes under
-  Notes, not fixed. A command your permissions deny is "not run".
-- **Step 4:** no plan and no yes; commit and go on.
-- **Step 5:** commit, then push and open with this instead. It adds the ticket line,
-  so leave that out. It refuses uncommitted changes to tracked files, so pass the
-  description on stdin and `git add` every new file that belongs in the MR:
-
-  ```bash
-  python3 ~/codebase/ai-skills/agent-launcher/scripts/ship.py mr \
-    --title "<title>" --body-file - [--draft] <<'MR'
-  <description>
-  MR
-  ```
-
-  `--draft` when a check failed or was not run, or the reviewer must confirm a
-  judgment call.
-- **Steps 6 and 7:** skip them. No `pr-monitor`; your final message is the MR URL and
-  a two-line summary.
-- **Needs a human** (ambiguous ticket, missing access, a risky decision): open no
-  speculative MR. Partial commits stay on the branch. Run this, then stop:
-
-  ```bash
-  python3 ~/codebase/ai-skills/agent-launcher/scripts/ship.py blocked --reason "<specific question>"
-  ```
 
 ## 1. Read the situation
 

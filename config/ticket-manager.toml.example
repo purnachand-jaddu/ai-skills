@@ -1,4 +1,4 @@
-# ~/.config/ticket-manager/config.toml, read by tm and the fleet.
+# ~/.config/ticket-manager/config.toml, read by tm.
 backend = "kaneo"
 
 [kaneo]

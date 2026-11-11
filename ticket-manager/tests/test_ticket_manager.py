@@ -169,7 +169,7 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(backend.comments, ["Work started on branch `fix/x`"])
 
 
-class FleetOpsTest(unittest.TestCase):
+class OpsTest(unittest.TestCase):
     def run_cli(self, argv, backend):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
