@@ -37,7 +37,8 @@ more file in `backends/`; no skill changes.
 close the thread first, with the `address` from `start` or `status`: T3's
 `t3_thread_interrupt` (`stop: true`) if it is still running, `t3_thread_organize`
 (`archive`; `settle` for a monitor whose MR merged or closed, so it stays findable),
-then `$SM forget <name>`. A thread can settle itself (no `threadId`), applied when
+then `$SM forget <name>`. A reviewer settles itself after reporting (`diff-review`
+"Reviewer thread"); archive one that didn't. A thread can settle itself (no `threadId`), applied when
 its turn ends. Those tools unavailable: forget it anyway and
 say the thread stays in the sidebar.
 

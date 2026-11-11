@@ -13,8 +13,9 @@ description: >-
   scenario. Use when the user says "review this", "review my diff", "review my
   uncommitted changes", "review what I've staged", "review the branch",
   "review this MR", "peer review", "second pass before I raise it", "what
-  would a reviewer find", or "diff-review". Read-only: never edits, comments,
-  approves, drafts, commits or pushes.
+  would a reviewer find", or "diff-review". Runs in a fresh reviewer thread
+  through session-manager and settles it when the report is in. Read-only: never
+  edits, comments, approves, drafts, commits or pushes.
 ---
 
 # Diff review
@@ -29,8 +30,8 @@ report; fixing is `pr-takeover`'s job, gating an open MR is `pr-monitor`'s.
 - **Read-only.** Run checks in the existing checkout or a scratch worktree;
   never edit, switch the user's branch, comment, resolve, approve, mark Draft
   or Ready, commit or push.
-- **Review in this session.** Read the diff yourself; no subagents. For a
-  second opinion from another agent the user can invoke `pair-programming`.
+- **One reviewer thread per review** ("Reviewer thread"); the reviewer itself
+  reads the diff in its own session, with no subagents.
 - **Read the neighbourhood, not the hunk.** Open the callers and callees of
   every changed function; most misses sit one call away.
 - **A finding is a failure scenario**: concrete input, state or interleaving →
@@ -41,6 +42,32 @@ report; fixing is `pr-takeover`'s job, gating an open MR is `pr-monitor`'s.
   maintainer cost goes on the "not counted" line, never in findings.
 - **Unrun is not passed.** A check you couldn't run is reported "not run";
   unmeasured cost is "not measured".
+
+## Reviewer thread
+
+**Your task says "You are the reviewer":** do steps 1–6 here. Write the report
+to the file the envelope names and send it, then on t3 settle your own thread:
+`t3_thread_organize` (`settle`, no `threadId`; it applies when your turn ends).
+
+**Otherwise** (the user, `pr-review`, pair-programming, pr-monitor), hand the
+review to one fresh reviewer so only its report comes back. Inputs: `<feature>`
+(the caller's, else `review`), agent (`claude` unless one is named), report file
+(default `~/.agent-sessions/<feature>/review-<n>.md`), `--hidden` if the caller says.
+
+1. **Scratch tree** at the commit under review, never the user's:
+   `git worktree add --detach ../<repo>-<feature>-review-<n> <sha>`. Uncommitted
+   work: `git diff HEAD > ~/.agent-sessions/<feature>/review-<n>.patch`, `git -C
+   <tree> apply` it, and copy untracked files in.
+2. **Start** with session-manager: `$SM start --feature <feature> --role reviewer
+   --cwd <tree> --message-file <f>`, the message `$SM envelope` wrapped around
+   "You are the reviewer. Load `diff-review` and review <scope> (patch: <path>);
+   the report file is <file>." Then go on with other work.
+3. **When the report arrives:** verify each finding against the code and say
+   which you drop and why; show the report. Then `$SM forget` the reviewer (one
+   that didn't settle: session-manager "Stopping on t3") and
+   `git worktree remove --force <tree>`.
+
+session-manager missing or `start` failing: review in this session and say so.
 
 ## 1. Scope
 

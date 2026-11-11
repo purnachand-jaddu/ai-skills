@@ -20,8 +20,9 @@ through `session-manager`; load it first.
 
 ## Ground rules
 
-- Delegate only when this skill is invoked. Otherwise review and research
-  yourself, in this session (the user's standing rule: no subagent fan-out).
+- Delegate research and tests only when this skill is invoked (the user's
+  standing rule: no subagent fan-out). Reviews always go to `diff-review`, which
+  starts its own reviewer thread.
 - Helpers never run in the user's working tree: the helper gets its own
   worktree, each reviewer a detached one.
 - Helpers never commit, push or start other agents.
@@ -48,7 +49,7 @@ Reviewers are not started up front; one is started per review.
 | **helper** | whole feature, reused | own worktree | yes, in its worktree | Do the task as scoped. Tell me which files you changed. |
 | **researcher** | the helper, given a research task | helper's worktree | no | Primary sources only (vendor docs, source code, changelogs) with URLs and the date read. Separate verified facts from inference. |
 | **tester** | the helper, given a test task | own worktree | tests only | Write and run tests for the scoped behaviour; prove each can fail. Report the commands and their results. |
-| **reviewer** | one review, then stopped | detached review worktree | no | Review the diff given. Findings only: file:line, the defect, a concrete failure scenario, severity. No style opinions the repo's rules don't back. Say what you didn't check. |
+| **reviewer** | one review, then settles | `diff-review`'s scratch tree | no | Started by `diff-review` ("Reviewer thread"); its rules are that skill's. |
 
 A fresh reviewer per review means no bias from earlier tasks; a long-lived
 helper keeps the feature's context and is cheaper.
@@ -68,18 +69,10 @@ ends (`git worktree remove`), after asking.
 
 ## Delegating
 
-- **Review:** write the diff scope (`git diff origin/<target>...` plus
-  uncommitted changes) to `~/.agent-sessions/<feature>/review-<n>.patch`, then
-  give the reviewer its own tree at the commit under review:
-
-  ```bash
-  git worktree add --detach ../<repo>-<feature>-review-<n> <sha>
-  git -C ../<repo>-<feature>-review-<n> apply ~/.agent-sessions/<feature>/review-<n>.patch  # only for uncommitted work
-  ```
-
-  `start(feature, reviewer, agent, cwd: that worktree)` with the patch
-  named in the task. Once its result is collected, stop the reviewer and
-  `git worktree remove --force` its worktree (it is scratch; this skill made it).
+- **Review:** run `diff-review` on the scope (`origin/<target>...` plus
+  uncommitted changes) through its "Reviewer thread", with this feature and the
+  agent the user named. It starts the reviewer, verifies the findings and
+  cleans up.
 - **Research / tests / other:** `delegate(helper, task)` to the long-lived
   helper with the role's rules in the envelope.
 - Keep working while helpers work. Collect with `collect()` when you need the
@@ -90,12 +83,11 @@ ends (`git worktree remove`), after asking.
 "Get it reviewed and push" is one request; the ask is the yes to push:
 
 1. Commits only: uncommitted work isn't pushed. Ask whether to commit it first.
-2. Run a **Review** (above) on the unpushed commits, with a fresh reviewer that
-   loads `diff-review` and reports its severities.
-3. Verify each finding against the code, as in "Bringing results back".
-4. **No verified "Fix before merge" finding:** push the feature branch (never
+2. Run a **Review** (above) on the unpushed commits; its findings come back
+   verified, with their severities.
+3. **No verified "Fix before merge" finding:** push the feature branch (never
    `main`) and report the commit, plus any "Should fix" or "Minor" findings.
-5. **Otherwise don't push.** Show the findings. If the user said "fix" too, fix
+4. **Otherwise don't push.** Show the findings. If the user said "fix" too, fix
    them and review again, at most twice, then stop and ask.
 
 **After any push to a branch with an open MR** (this flow or any other), nudge
