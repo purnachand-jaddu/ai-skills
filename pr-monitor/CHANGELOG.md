@@ -1,3 +1,4 @@
+2026-11-11: a review report named in the first message counts as that head's review, like a nudge's; pr-raise reviewed the head already
 2026-11-11: a new head's review goes through diff-review's reviewer thread instead of starting a reviewer here; one place starts reviewers
 2026-11-11: a stacked MR whose parent merged is retargeted to the parent's target and gets that target merged in on its own (merge commit, no force push); a squash-merge conflict still falls back to the offered rebase. A stacked MR waited on the user to retarget and pull main after its parent merged
 2026-11-10: also merge the target in when the MR is behind and overlaps it (files both sides changed), once per target head, not mid-pipeline, and not on an approved MR whose approvals a push resets; behind with no overlap is only reported past 50 commits. An MR sat 17 commits behind with silent overlap until a manual rebase hit two conflicts

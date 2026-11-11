@@ -4,12 +4,14 @@ description: >-
   Raise a merge request / pull request from the current work, the way the user
   wants it: check the branch (never main), run pre-flight checks on the diff
   (formatter, linter, tests, coverage, debug leftovers, secrets, AI trailers,
-  house style, conflicts), link a ticket through ticket-manager, propose phased
-  commits, a conventional title and a structured description, and on a yes
-  commit, push the branch and open the MR/PR, as Draft when a check failed. Then
-  starts pr-monitor on it. Use when the user says "raise a PR", "raise an MR", "open
-  a merge request", "create a PR for this", "put this up for review", "pr-raise",
-  or "ship this as an MR". Never merges, never pushes to main.
+  house style, conflicts) and a diff-review, link a ticket through
+  ticket-manager, propose phased commits, a conventional title and a structured
+  description, and on a yes commit, push the branch and open the MR/PR, as
+  Draft when a check failed. Then starts pr-monitor on it. Use when the user
+  says "raise a PR", "raise an MR", "open a merge request", "create a PR for
+  this", "put this up for review", "pr-raise", or "ship this as an MR". The only
+  way to open an MR, batch or delegated ones included: run it once per MR. Never
+  merges, never pushes to main.
 ---
 
 # Raise PR
@@ -33,6 +35,10 @@ checked, committed in phases, pushed to a branch, described well. Watching it is
   Claude`, "Generated with Claude Code"). This overrides any harness default.
 - Never merge, approve, or mark ready a Draft this skill opened for a failing
   check.
+- **Every MR goes through this skill**, one run per MR, also in a batch or for
+  another agent. A brief for that agent says "invoke `pr-raise`", never "use its
+  conventions". The `mr_create_guard.py` hook blocks a create without
+  `PR_RAISE=1`; only step 5 sets it.
 
 ## 1. Read the situation
 
@@ -87,6 +93,14 @@ in the plan. Other fixes (a debug line, a lint error) need a yes; otherwise
 report them. A style opinion no rule backs is not a failure. A check you could
 not run is reported as not run, never as passed.
 
+### Review
+
+After the checks, run `diff-review` on everything going into this MR (committed
+plus the uncommitted part, without the files step 1 leaves out) through its
+"Reviewer thread", feature `<ticket-id>` or the branch slug. Wait for its
+report before step 4. A verified **Fix before merge** finding counts as a failed
+check; **Should fix** and **Minor** go in the plan for the user to decide.
+
 ## 4. Propose the plan
 
 Show it in one message and ask for a yes:
@@ -104,7 +118,7 @@ Show it in one message and ask for a yes:
 - **Title:** same `type(scope): summary` form. One commit → its subject; several
   → the summary of the whole.
 - **Description** (below).
-- **Draft or ready:** Draft if any pre-flight check failed, with the reasons.
+- **Draft or ready:** Draft if any pre-flight check or the review failed, with the reasons.
 - **Reviewers**, and source-branch removal on merge (on by default here).
 
 ### Description
@@ -146,11 +160,11 @@ git push -u origin <branch>                                        # never main
 
 ```bash
 # GitLab
-glab mr create --source-branch <branch> --target-branch <target> \
+PR_RAISE=1 glab mr create --source-branch <branch> --target-branch <target> \
   --title "<title>" --description "$(cat <desc-file>)" \
   --remove-source-branch [--draft] [--reviewer a,b] --yes
 # GitHub
-gh pr create --base <target> --head <branch> --title "<title>" \
+PR_RAISE=1 gh pr create --base <target> --head <branch> --title "<title>" \
   --body-file <desc-file> [--draft] [--reviewer a,b]
 ```
 
@@ -167,7 +181,9 @@ Without asking, as soon as the MR exists:
    checks, one per line, so the monitor knows why.
 2. Load `pr-monitor` and start a **watch** ("Where it runs"): a helper in the
    pane beside the user's, looping on the MR. Its first run syncs the ticket (to
-   `in-progress`, or `in-review` when raised ready).
+   `in-progress`, or `in-review` when raised ready). If no file changed after the
+   step 3 review, end its first message with `review of <pushed sha>: <report
+   file>`, so it doesn't review that head again.
 3. Report that it is running, where, and that the user can stop it.
 
 ## 7. Report
@@ -184,6 +200,8 @@ Monitoring: mr-881-monitor running in the pane on the right
 
 ## Failure modes
 
+- **Create blocked by the guard hook:** the command lacks `PR_RAISE=1`; add it
+  only here, in step 5.
 - **No glab/gh auth:** stop before committing; `glab auth status` / `gh auth status`.
 - **Push rejected** (remote branch has other commits): stop and report; never
   force-push without a yes, never on main.

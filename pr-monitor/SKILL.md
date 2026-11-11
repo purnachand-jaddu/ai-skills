@@ -69,7 +69,8 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   The calling session relays them; you never ask the user directly.
 - **A `mr-<iid> nudge` from the caller** (a push): run a check now and start the
   new head's review without waiting for its pipeline. A review report it names
-  for that sha counts as the review; read it instead of starting a reviewer.
+  for that sha counts as the review; read it instead of starting a reviewer. The
+  same goes for one named in your first message (`review of <sha>: <file>`).
 
 ## Ground rules
 
