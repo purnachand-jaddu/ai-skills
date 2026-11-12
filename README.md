@@ -44,6 +44,8 @@ Every skill loads `skill-improve` when its output misses. `whatsapp-backup` and 
 $EDITOR ~/.config/ticket-manager/config.toml   # base_url (with /api), workspace_id, workspace_slug
 ```
 
+Optional: `~/codebase/ai-skills/pr-monitor/launchd/install-heartbeat.sh` restarts monitor loops that died and syncs tickets on merge, every 10 minutes (GitLab MRs, monitors on T3, macOS) (`--uninstall` removes it).
+
 In `~/.claude/settings.json`, add pr-raise's guard so no MR is opened outside it:
 
 ```json
