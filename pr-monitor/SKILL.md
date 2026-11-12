@@ -39,7 +39,7 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   - name `mr-<iid>-monitor`, role `monitor`, agent `claude`, labels
     `pair.feature=mr-<iid>`, cwd the repo checkout (a trusted folder, or the
     first message never arrives);
-  - first message: `/loop pr-monitor <mr-url> — you are the monitor helper; report events to <session-manager self()>`;
+  - first message: `/loop pr-monitor <mr-url> — monitor tick: you are the monitor helper; run a check now, then schedule the next; report events to <session-manager self()>`;
   - one monitor per MR: if `status(mr-<iid>)` shows `mr-<iid>-monitor` live,
     reuse it and say so;
   - first run "Catch-up" below, so an MR that merged while nothing watched it
@@ -48,8 +48,12 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
     a restart, and "Close-out" as soon as you learn an MR of yours merged or
     closed, from any source;
   - it is a child of the calling session and ends with it.
-- **When you are the monitor helper** (your first message says so): on t3, call
-  `watch_pull_request` with the MR URL on your first run, and
+- **When you are the monitor helper** (your first message says so): every
+  `/loop` firing and every nudge is a check, never an echo to ignore: run the
+  snapshot first, and end the turn with `ScheduleWakeup` (same prompt, as
+  above) unless the MR merged or closed. A turn with no tool call ends the loop
+  for good. On your first run, set `watched_by` to your name in the state file;
+  on t3, also call `watch_pull_request` with the MR URL, and
   `unwatch_pull_request` when you stop the loop. Runs are silent in your pane; send the caller (session-manager `report_command`) only
   these events, one line each, prefixed `mr-<iid> event:`
   - drafted (with the reasons) or looks ready to undraft (the caller asks the
@@ -325,6 +329,11 @@ List every watched MR that merged or closed and isn't closed out yet:
 
 One JSON line per MR (GitLab only); `--sync` runs ticket-manager's **Sync** for
 each ticket not already synced to the final state. Run "Close-out" for each.
+A line with `"loop": "stale"` is a watched MR (`watched_by` set), still open,
+whose monitor hasn't checked in 45 minutes: its loop died. Resend its first
+message (`/loop pr-monitor <mr-url> — monitor tick: …`) to `mr-<iid>-monitor`,
+or start a new watch if `$SM status` doesn't list it. This is a backstop seen
+only on the next Catch-up; a dead loop sends no events of its own.
 
 ### Close-out
 
