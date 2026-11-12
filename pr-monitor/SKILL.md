@@ -52,8 +52,11 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   `/loop` firing and every nudge is a check, never an echo to ignore: run the
   snapshot first, and end the turn with `ScheduleWakeup` (same prompt, as
   above) unless the MR merged or closed. A turn with no tool call ends the loop
-  for good. On your first run, set `watched_by` to your name in the state file;
-  on t3, also call `watch_pull_request` with the MR URL, and
+  for good. Never ask for more than 900 s: longer wakeups are often dropped. On
+  your first run, set `watched_by` in the state file to `{name, thread, caller,
+  cwd, url}` (your name, your `$SM self` address on t3 and none elsewhere, the
+  caller's address from your first message, the repo checkout, the MR URL); on t3, also call
+  `watch_pull_request` with the MR URL, and
   `unwatch_pull_request` when you stop the loop. Runs are silent in your pane; send the caller (session-manager `report_command`) only
   these events, one line each, prefixed `mr-<iid> event:`
   - drafted (with the reasons) or looks ready to undraft (the caller asks the
@@ -305,14 +308,16 @@ pane; see "Where it runs". Pace:
 - a review batch still open: about 10 minutes;
 - looks ready (green or no CI configured, no valid issues) or approved: about
   5 minutes for the first hour after it turns ready, since a merge usually comes
-  next, then about 30;
-- idle, waiting on reviewers: about 30 minutes;
+  next, then 15;
+- idle, waiting on reviewers: 15 minutes (900 s), the longest wait. Wakeups of
+  1800 s fired 1 time in 8 on the user's monitors; 300–1200 s always fired.
 - when the MR is merged or closed, sync the ticket one last time (done on a
   merge to main), send the final event, then stop the loop and settle the
   thread (see "Where it runs").
 
 The self-paced wakeup lives in the helper's process: if the harness ends the
-process, the next check is lost and nothing reports it. On t3 the
+process, a wakeup is dropped, or a turn hangs on API errors, the next check is
+lost and the loop sends nothing. The heartbeat below resends it. On t3 the
 `watch_pull_request` watch survives that and wakes the thread on checks,
 comments, reviews and conflicts, but not on a merge. Catch-up covers the merge.
 Don't count on T3 settling a linked thread when its PR merges: that is the
@@ -328,12 +333,15 @@ List every watched MR that merged or closed and isn't closed out yet:
 ```
 
 One JSON line per MR (GitLab only); `--sync` runs ticket-manager's **Sync** for
-each ticket not already synced to the final state. Run "Close-out" for each.
+each ticket not already synced to the final state. Run "Close-out" for each
+merged or closed line.
 A line with `"loop": "stale"` is a watched MR (`watched_by` set), still open,
-whose monitor hasn't checked in 45 minutes: its loop died. Resend its first
-message (`/loop pr-monitor <mr-url> — monitor tick: …`) to `mr-<iid>-monitor`,
-or start a new watch if `$SM status` doesn't list it. This is a backstop seen
-only on the next Catch-up; a dead loop sends no events of its own.
+whose monitor hasn't checked in 30 minutes: its loop died or hung. The
+heartbeat resends the tick on its own (`--restart`); in a session, resend it
+only for monitors whose `watched_by.caller` is your `$SM self`, and leave the
+rest. A monitor `$SM status` no longer lists: offer the user a new watch, never
+start one unasked. On "no" or when the user stops a watch, delete `watched_by`
+from its state file so it isn't flagged again.
 
 ### Close-out
 
@@ -363,9 +371,13 @@ The calling session's job, for each MR that merged or closed, however it learned
 5. `stale-watches.sh --mark <watch>`, then one line to the user, e.g.
    `!42 merged: ACME-1 → done; monitor settled; pair helper ended; 3 worktrees removed`.
 
-**Heartbeat**, so a ticket moves even when no agent is alive: a user cron or
-launchd job running `stale-watches.sh --sync` every 5 minutes. Set it up only
-on the user's yes; without it, Close-out waits for the next event or resume.
+**Heartbeat**, so tickets move and dead loops restart even when no agent is
+looking: a launchd job running `stale-watches.sh --sync --restart` every 10
+minutes (`launchd/install-heartbeat.sh`; log `~/.pr-monitor/heartbeat.log`).
+`--restart` resends the tick to `watched_by.thread` with `t3 thread send`, at
+most once per 30 minutes per MR; a busy thread gets it as its next turn. A
+stale monitor whose MR already merged or closed gets it too, so it still sends
+its final event. It never starts a monitor. Set it up only on the user's yes.
 
 Each run is one snapshot plus triage; the state file keeps runs from repeating.
 Report only what is new unless the user asks for the full picture.
