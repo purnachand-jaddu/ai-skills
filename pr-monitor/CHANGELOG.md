@@ -1,3 +1,4 @@
+2026-11-12: every /loop firing is a check that ends with the next ScheduleWakeup, the loop prompt says "monitor tick: run a check now", and the helper marks its state file watched_by, and stale-watches.sh lists watched open MRs unchecked for 45 minutes so Catch-up resends the /loop prompt. !932's monitor answered a firing with no tool call, the loop ended and it missed the merge
 2026-11-11: a PR with no CI and no valid issues counts as looking ready, checked every ~5 minutes for its first hour, then ~30; a monitor read it as idle and missed a merge for 20 minutes
 2026-11-11: a review report named in the first message counts as that head's review, like a nudge's; pr-raise reviewed the head already
 2026-11-11: a new head's review goes through diff-review's reviewer thread instead of starting a reviewer here; one place starts reviewers

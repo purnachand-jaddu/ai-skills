@@ -1,8 +1,9 @@
 #!/bin/zsh
-# stale-watches.sh [--sync | --mark <project>-<iid>]: lists watched GitLab MRs that merged or closed and aren't closed out; --sync also syncs their tickets; --mark closes one out.
+# stale-watches.sh [--sync | --mark <project>-<iid>]: lists watched GitLab MRs that merged or closed and aren't closed out, and open watched ones (watched_by) unchecked for LOOP_STALE_SECONDS; --sync also syncs tickets; --mark closes one out.
 set -euo pipefail
 STATE_DIR=${PR_MONITOR_DIR:-$HOME/.pr-monitor}
 STALE_SECONDS=${STALE_SECONDS:-0}
+LOOP_STALE_SECONDS=${LOOP_STALE_SECONDS:-2700}
 TM=${TM:-$HOME/codebase/ai-skills/ticket-manager/tm}
 
 if [[ ${1:-} == --mark ]]; then
@@ -17,18 +18,22 @@ for f in "$STATE_DIR"/<->-<->.json(N); do
   # Skip closed-out watches and, when STALE_SECONDS is set, anything checked within it.
   jq -e '.closed_out' "$f" >/dev/null && continue
   checked=$(jq -r '.checked_at // empty' "$f")
-  [[ -n $checked ]] && (( STALE_SECONDS > 0 )) && (( now - $(date -j -u -f %FT%TZ "$checked" +%s 2>/dev/null || date -u -d "$checked" +%s) < STALE_SECONDS )) && continue
+  age=0; [[ -n $checked ]] && age=$(( now - $(date -j -u -f %FT%TZ "$checked" +%s 2>/dev/null || date -u -d "$checked" +%s) ))
+  [[ -n $checked ]] && (( STALE_SECONDS > 0 )) && (( age < STALE_SECONDS )) && continue
+  loop_stale=false; (( age > LOOP_STALE_SECONDS )) && jq -e '.watched_by' "$f" >/dev/null && loop_stale=true
 
   name=${f:t:r}; pid=${name%-*}; iid=${name#*-}
   mr=$(glab api "projects/$pid/merge_requests/$iid" 2>/dev/null) || { jq -nc --arg w "$name" '{watch: $w, error: "MR not readable"}'; continue; }
-  line=$(jq -c --arg w "$name" --slurpfile s "$f" 'select(.state == "merged" or .state == "closed") | {
+  line=$(jq -c --arg w "$name" --slurpfile s "$f" --argjson loop_stale $loop_stale '
+    if .state == "opened" then (select($loop_stale) | {watch: $w, iid, url: .web_url, state, loop: "stale", last_checked: $s[0].checked_at}) else
+    select(.state == "merged" or .state == "closed") | {
       watch: $w, iid, url: .web_url, state, merged_into: .target_branch, sha: (.merge_commit_sha // .squash_commit_sha // .sha), head_sha: .sha,
       merged_at, closed_at, last_checked: $s[0].checked_at,
       tickets: ([($s[0].tickets // {}) | to_entries[] | {key, relation: .value.relation, last: .value.last_mr_state}] + [$s[0].ticket // empty | {key: .id, relation, last: .last_mr_state}] | unique_by(.key))
-    }' <<<"$mr")
+    } end' <<<"$mr")
   [[ -z $line ]] && continue
   print -r -- "$line"
-  [[ -z $sync ]] && continue
+  [[ -z $sync || $(jq -r .state <<<"$line") == opened ]] && continue
 
   # Sync each ticket not already synced to the final state; tm comments once per state.
   jq -c '. as $m | .tickets[] | select((.last // "") | test("^(merged|closed)") | not) | {key, relation, m: $m}' <<<"$line" | while read -r t; do
