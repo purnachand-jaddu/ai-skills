@@ -7,7 +7,9 @@ description: >-
   target branch, merge conflicts, and a diff-review of each new head
   (repo checks, cleanliness, and the adversarial review lenses). Each
   signal is verified before it counts; when a valid issue is found the MR/PR is
-  marked Draft so it cannot be merged, and the user gets a short report. Keeps
+  marked Draft so it cannot be merged, and the user gets a short report; once
+  every issue it drafted for is resolved and the head's review is clean, it
+  marks it ready again. Keeps
   the linked ticket's status in step through ticket-manager (in-progress,
   in-review, done on merge to main). Started automatically by pr-raise and
   pr-takeover. Watches run in their own helper agent beside the user's
@@ -28,7 +30,8 @@ description: >-
 
 You gate a merge request (GitLab) or pull request (GitHub): report what changed,
 judge whether each signal is a real problem, and if any is, mark it **Draft** so
-nobody merges it by accident. Fixing is `pr-takeover`'s job.
+nobody merges it by accident; once what you drafted it for is resolved, mark it
+ready again. Fixing is `pr-takeover`'s job.
 
 ## Where it runs
 
@@ -59,8 +62,10 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
   `watch_pull_request` with the MR URL, and
   `unwatch_pull_request` when you stop the loop. Runs are silent in your pane; send the caller (session-manager `report_command`) only
   these events, one line each, prefixed `mr-<iid> event:`
-  - drafted (with the reasons) or looks ready to undraft (the caller asks the
-    user and waits for a yes);
+  - drafted (with the reasons), undrafted (`mr-<iid> event: undrafted
+    (<why>)`), or stays Draft only for what doesn't draft (a Should fix, a
+    flake), once per head: `mr-<iid> event: stays Draft (<what>)`; see
+    "Undrafting";
   - a review batch settled (see "Peer review comments");
   - ticket moved;
   - the target merged in and pushed ("Merging in the target"), with the new
@@ -81,17 +86,18 @@ nobody merges it by accident. Fixing is `pr-takeover`'s job.
 
 ## Ground rules
 
-- **The automatic writes are Draft, the ticket, and retargeting a stacked MR
-  whose parent merged.** Drafting on a valid issue, ticket-manager's status moves
-  and comments, and that retarget are pre-authorised. Everything
+- **The automatic writes are Draft, undrafting what this skill drafted, the
+  ticket, and retargeting a stacked MR whose parent merged.** Drafting on a valid
+  issue, "Undrafting", ticket-manager's status moves and comments, and that
+  retarget are pre-authorised. Everything
   else outward-facing needs a yes: comments, replying to or resolving threads,
   retrying jobs, editing the description, labels, reviewers.
-- **Never** merge, approve or undraft on your own, or push except a requested
+- **Never** merge or approve, or push except a requested
   sync ("Syncing with main") or a merge commit of the target
   ("Merging in the target"). Never push to `main` or the target branch.
-- **Undraft only on the user's yes for that MR** (`glab mr update <iid> --ready`,
-  `gh pr ready <n>`). This binds the calling session too, and a standing "decide
-  yourself" doesn't cover it: ask, even when everything else is delegated.
+- **Undraft only what this skill or `pr-raise` drafted** (`draft_reason` set),
+  and only as "Undrafting" says. An MR drafted by hand stays Draft until the
+  user undrafts it or asks you to.
 - **Verify before you count.** A comment, red job or coverage dip is a signal,
   not a verdict: read the code, the log, the numbers. Only a verified problem
   drafts the MR.
@@ -110,7 +116,8 @@ It prints one JSON digest: MR state (draft, conflicts, merge status, sha),
 unresolved threads and new notes, head pipeline status, failed and running jobs,
 unit-test summary, coverage and target coverage. State lives in
 `~/.pr-monitor/<project>-<iid>.json` (`PR_MONITOR_DIR` overrides);
-`changed_since_last` says what is new.
+`changed_since_last` says what is new. On GitHub, keep the same fields
+(`draft_reason`, `review`, `watched_by`) in `~/.pr-monitor/<repo>-<n>.json`.
 
 GitHub equivalents:
 
@@ -188,8 +195,23 @@ once:
   - GitHub: `gh pr ready <n> --undo`
   - Write the reasons into the state file's `draft_reason` (one line per issue),
     so the next run knows this skill drafted it and why.
-- **Already Draft:** leave it. If every `draft_reason` issue is resolved, tell the
-  user and offer to mark it ready; don't do it yourself.
+- **Already Draft with `draft_reason`:** add this run's new valid issues to
+  it, then check "Undrafting". Drafted by hand (no `draft_reason`): leave it.
+- **Not Draft at the snapshot but `draft_reason` set:** someone undrafted it; move it to
+  `undrafted: {at, sha, by: "user"}`, so a later hand Draft isn't taken for yours.
+- **Undrafting.** Mark it ready yourself (`glab mr update <iid> --ready`,
+  `gh pr ready <n>`) when all of these hold on the current head:
+  - this run found no valid issue, and every `draft_reason` issue is verified
+    resolved;
+  - the latest `diff-review` is of this head (`review.reviewed_sha`) and has no
+    Fix before merge and no Should fix;
+  - the head pipeline passed, or the repo has no CI; none is running;
+  - no conflicts, no unresolved valid thread, no review batch still open.
+
+  Re-snapshot just before: the head must still be `review.reviewed_sha`. Then
+  move `draft_reason` to `undrafted: {at, sha, why}` in the state file and send
+  `mr-<iid> event: undrafted (<why>)`. Only a Should fix or a flake left: stay
+  Draft and send `stays Draft`, once per head.
 - **No valid issues:** change nothing.
 
 ## 4. Sync the ticket
@@ -389,13 +411,14 @@ Report only what is new unless the user asks for the full picture.
   as "passing" or as a valid issue.
 - **Draft fails** (permissions): report the valid issues anyway and say the MR
   could not be drafted.
+- **Undraft fails:** keep `draft_reason`, report the error, try again next run.
 - **Rebase stops part-way and can't be finished:** `git rebase --abort`, so the
   branch is exactly as it was; report the conflict.
 - **Conflict resolution abandoned** (not simple, red tests, a Fix before merge,
   a rejected push): nothing was pushed; Draft and offer the sync as before, with
   the reason.
-- **Head moved during the run:** re-snapshot before drafting, so you never draft
-  on findings for an old sha.
+- **Head moved during the run:** re-snapshot before drafting or undrafting, so
+  you never act on findings for an old sha.
 - **Monitor helper exits or is killed:** the calling session gets the exit
   notice, when there is one; say the watch stopped and offer to restart it. A
   process ended by the harness gives no notice; Catch-up finds those. State on disk means a

@@ -34,7 +34,7 @@ checked, committed in phases, pushed to a branch, described well. Watching it is
 - **No AI attribution** in commits, title or description (`Co-Authored-By:
   Claude`, "Generated with Claude Code"). This overrides any harness default.
 - Never merge, approve, or mark ready a Draft this skill opened for a failing
-  check.
+  check; `pr-monitor` undrafts it once its `draft_reason` is resolved.
 - **Every MR goes through this skill**, one run per MR, also in a batch or for
   another agent. A brief for that agent says "invoke `pr-raise`", never "use its
   conventions". The `mr_create_guard.py` hook blocks a create without
@@ -178,7 +178,8 @@ Without asking, as soon as the MR exists:
 1. Raised Draft for failing checks: run pr-monitor's snapshot once
    (`~/codebase/ai-skills/pr-monitor/scripts/mr-snapshot.sh <iid>`), then set
    `draft_reason` in `~/.pr-monitor/<project_id>-<iid>.json` to the failing
-   checks, one per line, so the monitor knows why.
+   checks, one per line, so the monitor knows why and can undraft it. GitHub:
+   write `{"draft_reason": [...]}` to `~/.pr-monitor/<repo>-<n>.json` directly.
 2. Load `pr-monitor` and start a **watch** ("Where it runs"): a helper in the
    pane beside the user's, looping on the MR. Its first run syncs the ticket (to
    `in-progress`, or `in-review` when raised ready). If no file changed after the
