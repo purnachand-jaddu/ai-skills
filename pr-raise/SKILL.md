@@ -178,8 +178,10 @@ Without asking, as soon as the MR exists:
 1. Raised Draft for failing checks: run pr-monitor's snapshot once
    (`~/codebase/ai-skills/pr-monitor/scripts/mr-snapshot.sh <iid>`), then set
    `draft_reason` in `~/.pr-monitor/<project_id>-<iid>.json` to the failing
-   checks, one per line, so the monitor knows why and can undraft it. GitHub:
-   write `{"draft_reason": [...]}` to `~/.pr-monitor/<repo>-<n>.json` directly.
+   checks (a JSON array, one string per check) and `drafted_at` to the MR's
+   `created_at` (server clock), so the
+   monitor knows why and can undraft it. GitHub: merge the same two fields into
+   `~/.pr-monitor/<repo>-<n>.json` (`jq '. + {…}'`, or a new file).
 2. Load `pr-monitor` and start a **watch** ("Where it runs"): a helper in the
    pane beside the user's, looping on the MR. Its first run syncs the ticket (to
    `in-progress`, or `in-review` when raised ready). If no file changed after the

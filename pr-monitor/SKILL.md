@@ -7,9 +7,8 @@ description: >-
   target branch, merge conflicts, and a diff-review of each new head
   (repo checks, cleanliness, and the adversarial review lenses). Each
   signal is verified before it counts; when a valid issue is found the MR/PR is
-  marked Draft so it cannot be merged, and the user gets a short report; once
-  every issue it drafted for is resolved and the head's review is clean, it
-  marks it ready again. Keeps
+  marked Draft so it cannot be merged (and ready again once resolved), and the
+  user gets a short report. Keeps
   the linked ticket's status in step through ticket-manager (in-progress,
   in-review, done on merge to main). Started automatically by pr-raise and
   pr-takeover. Watches run in their own helper agent beside the user's
@@ -64,8 +63,8 @@ ready again. Fixing is `pr-takeover`'s job.
   these events, one line each, prefixed `mr-<iid> event:`
   - drafted (with the reasons), undrafted (`mr-<iid> event: undrafted
     (<why>)`), or stays Draft only for what doesn't draft (a Should fix, a
-    flake), once per head: `mr-<iid> event: stays Draft (<what>)`; see
-    "Undrafting";
+    flake), once per head (`stays_draft_sent: <sha>`): `mr-<iid> event: stays
+    Draft (<what>)`; see "Undrafting";
   - a review batch settled (see "Peer review comments");
   - ticket moved;
   - the target merged in and pushed ("Merging in the target"), with the new
@@ -73,10 +72,13 @@ ready again. Fixing is `pr-takeover`'s job.
   - conflicts that aren't simple: offer a sync;
   - parent MR merged: retargeted and the target merged in, or why not
     ("Stacked on a merged parent");
-  - merged or closed (the final one); the caller runs "Close-out". Then
-    `unwatch_pull_request`, stop the loop, and on t3 settle your own thread:
+  - merged or closed (the final one); the caller runs "Close-out". Then set
+    `final_event_at` in the state file, `unwatch_pull_request`, stop the
+    loop, and on t3 settle your own thread:
     `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
-    ends). The caller forgets you on this event (session-manager "Stopping on t3");
+    ends). The caller forgets you on this event (session-manager "Stopping on t3").
+    A later tick with `final_event_at` set: send nothing,
+    schedule nothing, settle again (a message un-settles the thread);
   - stuck: auth failure, API errors on two runs in a row, or a blocked dialog.
   The calling session relays them; you never ask the user directly.
 - **A `mr-<iid> nudge` from the caller** (a push): run a check now and start the
@@ -193,8 +195,10 @@ once:
 - **Any valid issue and the MR is not Draft:** mark it Draft, then record why.
   - GitLab: `glab mr update <iid> --draft`
   - GitHub: `gh pr ready <n> --undo`
-  - Write the reasons into the state file's `draft_reason` (one line per issue),
-    so the next run knows this skill drafted it and why.
+  - Write the reasons into the state file's `draft_reason` (a JSON array, one
+    string per issue) and `drafted_at`, so the next run knows this skill drafted
+    it and why. `drafted_at` is the server's time of that draft change (the
+    note or timeline event below), not the local clock.
 - **Already Draft with `draft_reason`:** add this run's new valid issues to
   it, then check "Undrafting". Drafted by hand (no `draft_reason`): leave it.
 - **Not Draft at the snapshot but `draft_reason` set:** someone undrafted it; move it to
@@ -208,10 +212,21 @@ once:
   - the head pipeline passed, or the repo has no CI; none is running;
   - no conflicts, no unresolved valid thread, no review batch still open.
 
-  Re-snapshot just before: the head must still be `review.reviewed_sha`. Then
-  move `draft_reason` to `undrafted: {at, sha, why}` in the state file and send
-  `mr-<iid> event: undrafted (<why>)`. Only a Should fix or a flake left: stay
-  Draft and send `stays Draft`, once per head.
+  Just before, check two things:
+  - Re-snapshot: same head (`review.reviewed_sha`), no new notes or threads,
+    same pipeline status, no conflicts. Anything new: triage it and skip the
+    undraft this run.
+  - The latest draft change is yours: on GitLab the last system note "marked
+    this merge request as **draft**", on GitHub the last `convert_to_draft`
+    timeline event. Made after `drafted_at`: the user drafted it by hand; move
+    `draft_reason` to `undrafted: {at, sha, by: "user"}`, leave it Draft and
+    send `stays Draft (drafted by hand at <time>)`. No `drafted_at` (older
+    state): don't undraft; send `stays Draft (no drafted_at; undraft by hand)`
+    once. A string `draft_reason` (older state) is one issue per line.
+
+  Then move `draft_reason` to `undrafted: {at, sha, why}` in the state file and
+  send `mr-<iid> event: undrafted (<why>)`. Only a Should fix or a flake left:
+  stay Draft and send `stays Draft`, once per head.
 - **No valid issues:** change nothing.
 
 ## 4. Sync the ticket
@@ -398,8 +413,9 @@ looking: a launchd job running `stale-watches.sh --sync --restart` every 10
 minutes (`launchd/install-heartbeat.sh`; log `~/.pr-monitor/heartbeat.log`).
 `--restart` resends the tick to `watched_by.thread` with `t3 thread send`, at
 most once per 30 minutes per MR; a busy thread gets it as its next turn. A
-stale monitor whose MR already merged or closed gets it too, so it still sends
-its final event. It never starts a monitor. Set it up only on the user's yes.
+stale monitor whose MR already merged or closed gets it too until
+`final_event_at` is set, so it still sends its final event. It never starts a
+monitor. Set it up only on the user's yes.
 
 Each run is one snapshot plus triage; the state file keeps runs from repeating.
 Report only what is new unless the user asks for the full picture.

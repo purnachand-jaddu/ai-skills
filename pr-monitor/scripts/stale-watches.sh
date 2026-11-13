@@ -50,8 +50,9 @@ for f in "$STATE_DIR"/<->-<->.json(N); do
     } end' <<<"$mr")
   [[ -z $line ]] && continue
   print -r -- "$line"
-  # A dead loop is woken even after a merge, so the monitor still sends its final event.
-  [[ -n $restart ]] && $loop_stale && restart_loop "$f"
+  # A dead loop is woken after a merge until its final event is recorded, so it still sends it.
+  needs_tick=true; [[ $(jq -r .state <<<"$line") != opened ]] && jq -e '.final_event_at' "$f" >/dev/null && needs_tick=false
+  [[ -n $restart ]] && $loop_stale && $needs_tick && restart_loop "$f"
   [[ -z $sync || $(jq -r .state <<<"$line") == opened ]] && continue
 
   # Sync each ticket not already synced to the final state; tm comments once per state.
