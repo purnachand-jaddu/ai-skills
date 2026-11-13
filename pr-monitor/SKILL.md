@@ -72,10 +72,13 @@ ready again. Fixing is `pr-takeover`'s job.
   - conflicts that aren't simple: offer a sync;
   - parent MR merged: retargeted and the target merged in, or why not
     ("Stacked on a merged parent");
-  - merged or closed (the final one); the caller runs "Close-out". Then
-    `unwatch_pull_request`, stop the loop, and on t3 settle your own thread:
+  - merged or closed (the final one); the caller runs "Close-out". Then set
+    `final_event_at` in the state file, `unwatch_pull_request`, stop the
+    loop, and on t3 settle your own thread:
     `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
-    ends). The caller forgets you on this event (session-manager "Stopping on t3");
+    ends). The caller forgets you on this event (session-manager "Stopping on t3").
+    A later tick with `final_event_at` set: send nothing,
+    schedule nothing, settle again (a message un-settles the thread);
   - stuck: auth failure, API errors on two runs in a row, or a blocked dialog.
   The calling session relays them; you never ask the user directly.
 - **A `mr-<iid> nudge` from the caller** (a push): run a check now and start the
@@ -410,8 +413,9 @@ looking: a launchd job running `stale-watches.sh --sync --restart` every 10
 minutes (`launchd/install-heartbeat.sh`; log `~/.pr-monitor/heartbeat.log`).
 `--restart` resends the tick to `watched_by.thread` with `t3 thread send`, at
 most once per 30 minutes per MR; a busy thread gets it as its next turn. A
-stale monitor whose MR already merged or closed gets it too, so it still sends
-its final event. It never starts a monitor. Set it up only on the user's yes.
+stale monitor whose MR already merged or closed gets it too until
+`final_event_at` is set, so it still sends its final event. It never starts a
+monitor. Set it up only on the user's yes.
 
 Each run is one snapshot plus triage; the state file keeps runs from repeating.
 Report only what is new unless the user asks for the full picture.
