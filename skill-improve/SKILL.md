@@ -21,7 +21,10 @@ rest. Generalise first, then edit as little as possible.
 
 - **Diff first, yes second.** Show the exact diff and apply it only on the
   user's yes. A skill changes future behaviour everywhere it runs.
-- **Only the user's own skills:** `~/codebase/ai-skills/<name>/`. Built-in and
+- **Only the user's own skills:** a link in `~/.claude/skills` whose target
+  (`readlink -f`) sits in the ai-skills repo, the folder holding `install.sh`
+  and `setup/third-party.json`. Links into `~/.cache/ai-skills/third-party` are
+  third-party: change their pin through `setup`, never their files. Built-in and
   plugin skills are not editable. A repo's `.agents/skills/` is committed: hand
   the change to `pr-raise` as an MR instead.
 - **One complaint, one rule.** Don't use the edit to tidy unrelated parts of the

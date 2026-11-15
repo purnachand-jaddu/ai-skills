@@ -42,13 +42,13 @@ Every skill loads `skill-improve` when its output misses. `whatsapp-backup` and 
 ## Setup
 
 ```bash
-~/codebase/ai-skills/install.sh                # symlinks skills into ~/.claude/skills, then runs setup/install.sh
+./install.sh                                   # from the repo root; symlinks skills into ~/.claude/skills, then runs setup/install.sh
 $EDITOR ~/.config/ticket-manager/config.toml   # base_url (with /api), workspace_id, workspace_slug
 ```
 
 Third-party plugins, skills and CLI tools are listed in `setup/third-party.json`; `setup/install.sh` installs them (`--check` only reports, and lists skill folders nobody recorded). Ask the `setup` skill to add one.
 
-Optional: `~/codebase/ai-skills/pr-monitor/launchd/install-heartbeat.sh` restarts monitor loops that died and syncs tickets on merge, every 10 minutes (GitLab MRs, monitors on T3, macOS) (`--uninstall` removes it).
+Optional: `pr-monitor/launchd/install-heartbeat.sh` restarts monitor loops that died and syncs tickets on merge, every 10 minutes (GitLab MRs, monitors on T3, macOS) (`--uninstall` removes it).
 
 In `~/.claude/settings.json`, add pr-raise's guard so no MR is opened outside it:
 

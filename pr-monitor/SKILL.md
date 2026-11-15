@@ -114,7 +114,7 @@ ready again. Fixing is `pr-takeover`'s job.
 GitLab (from the repo, or pass a number/URL):
 
 ```bash
-~/codebase/ai-skills/pr-monitor/scripts/mr-snapshot.sh [<iid>|<url>]
+~/.claude/skills/pr-monitor/scripts/mr-snapshot.sh [<iid>|<url>]
 ```
 
 It prints one JSON digest: MR state (draft, conflicts, merge status, sha),
@@ -373,8 +373,8 @@ user's `sidebarAutoSettleOnMerge` setting, and it may be off.
 List every watched MR that merged or closed and isn't closed out yet:
 
 ```bash
-~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh          # list
-~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh --sync   # list and sync their tickets
+~/.claude/skills/pr-monitor/scripts/stale-watches.sh          # list
+~/.claude/skills/pr-monitor/scripts/stale-watches.sh --sync   # list and sync their tickets
 ```
 
 One JSON line per MR (GitLab only); `--sync` runs ticket-manager's **Sync** for

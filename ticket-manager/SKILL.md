@@ -20,7 +20,7 @@ failure. The status rules (which column, when to leave a ticket alone, when to
 comment) live in code, `ticket_manager/lifecycle.py`; don't re-derive them.
 
 ```bash
-TM=~/codebase/ai-skills/ticket-manager/tm
+TM=~/.claude/skills/ticket-manager/tm
 ```
 
 **Backend:** chosen in `~/.config/ticket-manager/config.toml` (`backend =

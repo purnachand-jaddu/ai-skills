@@ -4,7 +4,7 @@ set -euo pipefail
 STATE_DIR=${PR_MONITOR_DIR:-$HOME/.pr-monitor}
 STALE_SECONDS=${STALE_SECONDS:-0}
 LOOP_STALE_SECONDS=${LOOP_STALE_SECONDS:-1800}
-TM=${TM:-$HOME/codebase/ai-skills/ticket-manager/tm}
+TM=${TM:-${0:A:h:h:h}/ticket-manager/tm}
 T3=${T3:-$HOME/.t3/bin/t3}
 
 if [[ ${1:-} == --mark ]]; then
