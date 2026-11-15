@@ -1,0 +1,37 @@
+{
+  "marketplaces": [
+    {"name": "claude-plugins-official", "repo": "anthropics/claude-plugins-official"},
+    {"name": "cloudflare", "repo": "cloudflare/skills"},
+    {"name": "ponytail", "repo": "DietrichGebert/ponytail"},
+    {"name": "cctop", "repo": "st0012/cctop"},
+    {"name": "portal", "repo": "spotify/portal-ai-plugins"}
+  ],
+  "plugins": [
+    "superpowers@claude-plugins-official",
+    "vercel@claude-plugins-official",
+    "figma@claude-plugins-official",
+    "frontend-design@claude-plugins-official",
+    "gopls-lsp@claude-plugins-official",
+    "clangd-lsp@claude-plugins-official",
+    "ponytail@ponytail",
+    "cctop@cctop",
+    "portal@portal",
+    "shunt@portal"
+  ],
+  "skills": [
+    {
+      "name": "tailscale",
+      "repo": "https://github.com/tailscale/tailscale-skill",
+      "path": "skills/tailscale",
+      "ref": "4f05d353efc56962546aa26ccc59bb08ca699ad1",
+      "docs": "https://tailscale.com/docs/features/tailscale-skill"
+    }
+  ],
+  "tools": [
+    {"name": "glab", "install": "brew install glab", "for": "pr-raise, pr-monitor, pr-takeover (GitLab)"},
+    {"name": "gh", "install": "brew install gh", "for": "pr-raise, pr-monitor, pr-takeover (GitHub)"},
+    {"name": "jq", "install": "brew install jq", "for": "pr-monitor, ticket-manager"},
+    {"name": "python3", "install": "brew install python", "for": "session-manager, ticket-manager, pr-raise guard"},
+    {"name": "idevicebackup2", "install": "brew install libimobiledevice", "for": "whatsapp-backup"}
+  ]
+}
