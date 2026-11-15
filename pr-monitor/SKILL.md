@@ -84,7 +84,8 @@ ready again. Fixing is `pr-takeover`'s job.
     A later tick with `final_event_at` set and the MR still merged or
     closed: send nothing, schedule nothing, settle again (a message
     un-settles the thread). A new watch's first tick on such an MR sends one
-    `mr-<iid> event: already merged (<when>)` (or closed) first. Reopened (open now), or a new
+    `mr-<iid> event: already merged (<when>)` (or closed), then
+    `unwatch_pull_request` and settles. Reopened (open now), or a new
     watch on an open MR whose state file has `closed_out` (the heartbeat
     skips those): delete `final_event_at` and `closed_out`, call
     `watch_pull_request` again and run the check;
@@ -405,7 +406,8 @@ The calling session's job, for each MR that merged or closed, however it learned
 2. **Monitor and reviewers:** every helper in `$SM status --feature mr-<iid>`:
    session-manager "Stopping on t3", except a monitor still in its final
    turn: wait for it to go idle (`$SM status`, a few minutes) instead of
-   interrupting it, so its unwatch and settle aren't cut off. Then settle
+   interrupting it, so its unwatch and settle aren't cut off; still working
+   after that, interrupt it and say so. Then settle
    its thread (`t3_thread_organize` `settle` with its `threadId`) even if it
    settled itself, archive reviewers, and `$SM forget`. Forget force-removes the helper's worktree, so run the
    worktree check (step 4) on it first; a failed check keeps the helper.
