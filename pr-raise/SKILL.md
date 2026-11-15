@@ -43,7 +43,7 @@ checked, committed in phases, pushed to a branch, described well. Watching it is
 ## 1. Read the situation
 
 ```bash
-~/codebase/ai-skills/pr-takeover/scripts/detect-forge.sh   # gitlab | github | ...
+~/.claude/skills/pr-takeover/scripts/detect-forge.sh   # gitlab | github | ...
 git rev-parse --abbrev-ref HEAD; git worktree list
 git status --short
 git fetch origin && git log --oneline origin/<target>..HEAD
@@ -176,7 +176,7 @@ Keep the description in a scratchpad file, not a shell string, so backticks and
 Without asking, as soon as the MR exists:
 
 1. Raised Draft for failing checks: run pr-monitor's snapshot once
-   (`~/codebase/ai-skills/pr-monitor/scripts/mr-snapshot.sh <iid>`), then set
+   (`~/.claude/skills/pr-monitor/scripts/mr-snapshot.sh <iid>`), then set
    `draft_reason` in `~/.pr-monitor/<project_id>-<iid>.json` to the failing
    checks (a JSON array, one string per check) and `drafted_at` to the MR's
    `created_at` (server clock), so the

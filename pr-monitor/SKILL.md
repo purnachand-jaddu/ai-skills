@@ -63,8 +63,10 @@ ready again. Fixing is `pr-takeover`'s job.
   these events, one line each, prefixed `mr-<iid> event:`
   - drafted (with the reasons), undrafted (`mr-<iid> event: undrafted
     (<why>)`), or stays Draft only for what doesn't draft (a Should fix, a
-    flake), once per head (`stays_draft_sent: <sha>`): `mr-<iid> event: stays
-    Draft (<what>)`; see "Undrafting";
+    flake), once per head and set of reason kinds (`stays_draft_sent: {sha,
+    kinds}`, kinds sorted from `should_fix`, `flake`, `no_drafted_at`,
+    `drafted_by_hand`; a plain sha string is the older head-only form):
+    `mr-<iid> event: stays Draft (<what>)`; see "Undrafting";
   - a review batch settled (see "Peer review comments");
   - ticket moved;
   - the target merged in and pushed ("Merging in the target"), with the new
@@ -74,17 +76,24 @@ ready again. Fixing is `pr-takeover`'s job.
     ("Stacked on a merged parent");
   - merged or closed (the final one); the caller runs "Close-out". Then set
     `final_event_at` in the state file, `unwatch_pull_request`, stop the
-    loop, and on t3 settle your own thread:
+    loop, and on t3 settle your own thread as the turn's last call:
     `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
-    ends). The caller forgets you on this event (session-manager "Stopping on t3").
+    ends). Cancelled or refused (a message arriving mid-turn cancels the call
+    in flight): call it once more. The caller also settles and forgets you on
+    this event (Close-out).
     A later tick with `final_event_at` set and the MR still merged or
     closed: send nothing, schedule nothing, settle again (a message
-    un-settles the thread). Reopened, or a new watch on a state file with
-    `closed_out` (the heartbeat skips those): delete `final_event_at` and
-    `closed_out`, call `watch_pull_request` again and run the check;
+    un-settles the thread). A new watch's first tick on such an MR sends one
+    `mr-<iid> event: already merged (<when>)` (or closed), then
+    `unwatch_pull_request` and settles. Reopened (open now), or a new
+    watch on an open MR whose state file has `closed_out` (the heartbeat
+    skips those): delete `final_event_at` and `closed_out`, call
+    `watch_pull_request` again and run the check;
   - stuck: auth failure, API errors on two runs in a row, or a blocked dialog.
   The calling session relays them; you never ask the user directly.
-- **A `mr-<iid> nudge` from the caller** (a push): run a check now and start the
+- **A `mr-<iid> nudge` from the caller** (a push; the caller sends it with
+  `$SM delegate`, which on t3 queues behind a running turn; never steer into
+  it, that cancels the monitor's call in flight): run a check now and start the
   new head's review without waiting for its pipeline. A review report it names
   for that sha counts as the review; read it instead of starting a reviewer. The
   same goes for one named in your first message (`review of <sha>: <file>`).
@@ -114,7 +123,7 @@ ready again. Fixing is `pr-takeover`'s job.
 GitLab (from the repo, or pass a number/URL):
 
 ```bash
-~/codebase/ai-skills/pr-monitor/scripts/mr-snapshot.sh [<iid>|<url>]
+~/.claude/skills/pr-monitor/scripts/mr-snapshot.sh [<iid>|<url>]
 ```
 
 It prints one JSON digest: MR state (draft, conflicts, merge status, sha),
@@ -229,12 +238,12 @@ once:
     `draft_reason` to `undrafted: {at, sha, by: "user"}`, leave it Draft and
     send `stays Draft (drafted by hand at <time>)`. No `drafted_at` (older
     state): don't undraft; send `stays Draft (no drafted_at; undraft by hand)`
-    once per head (`stays_draft_sent`). A string `draft_reason` (older
-    state) is one issue per line.
+    once per head and reason kinds (`stays_draft_sent`). A string
+    `draft_reason` (older state) is one issue per line.
 
   Then move `draft_reason` to `undrafted: {at, sha, why}` in the state file and
   send `mr-<iid> event: undrafted (<why>)`. Only a Should fix or a flake left:
-  stay Draft and send `stays Draft`, once per head.
+  stay Draft and send `stays Draft`, once per head and reason kinds.
 - **No valid issues:** change nothing.
 
 ## 4. Sync the ticket
@@ -373,8 +382,8 @@ user's `sidebarAutoSettleOnMerge` setting, and it may be off.
 List every watched MR that merged or closed and isn't closed out yet:
 
 ```bash
-~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh          # list
-~/codebase/ai-skills/pr-monitor/scripts/stale-watches.sh --sync   # list and sync their tickets
+~/.claude/skills/pr-monitor/scripts/stale-watches.sh          # list
+~/.claude/skills/pr-monitor/scripts/stale-watches.sh --sync   # list and sync their tickets
 ```
 
 One JSON line per MR (GitLab only); `--sync` runs ticket-manager's **Sync** for
@@ -395,8 +404,12 @@ The calling session's job, for each MR that merged or closed, however it learned
 
 1. **Ticket:** `stale-watches.sh --sync` (done on a fixes MR merged to main).
 2. **Monitor and reviewers:** every helper in `$SM status --feature mr-<iid>`:
-   session-manager "Stopping on t3" (settle the monitor, archive reviewers),
-   then `$SM forget`. Forget force-removes the helper's worktree, so run the
+   session-manager "Stopping on t3", except a monitor still in its final
+   turn: wait for it to go idle (`$SM status`, a few minutes) instead of
+   interrupting it, so its unwatch and settle aren't cut off; still working
+   after that, interrupt it and say so. Then settle
+   its thread (`t3_thread_organize` `settle` with its `threadId`) even if it
+   settled itself, archive reviewers, and `$SM forget`. Forget force-removes the helper's worktree, so run the
    worktree check (step 4) on it first; a failed check keeps the helper.
 3. **The feature's pair helper:** if no other open MR of yours uses it, end it
    (pair-programming "End a feature"; a merge needs no question). Otherwise

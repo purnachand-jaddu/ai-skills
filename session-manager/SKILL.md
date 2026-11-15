@@ -19,7 +19,7 @@ with `{"error": …}` on failure. Never run harness commands yourself, here or i
 a skill that uses this one.
 
 ```bash
-SM=~/codebase/ai-skills/session-manager/sm
+SM=~/.claude/skills/session-manager/sm
 ```
 
 **Backend:** the harness this session runs in, detected (`t3` when

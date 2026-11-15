@@ -14,7 +14,7 @@ One command produces a dated folder of one HTML file per chat plus all media,
 and the raw `ChatStorage.sqlite` / `ContactsV2.sqlite` for direct queries.
 
 ```bash
-~/codebase/ai-skills/whatsapp-backup/scripts/whatsapp-backup.sh
+~/.claude/skills/whatsapp-backup/scripts/whatsapp-backup.sh
 ```
 
 Output: `~/Backups/whatsapp/<YYYY-MM-DD>/` (open any `*.html` in a browser)

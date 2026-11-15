@@ -1,3 +1,4 @@
+2026-11-16: scripts are called through ~/.claude/skills/<skill>/ instead of ~/codebase/ai-skills/, so the skill works wherever the repo is cloned. The repo path only held on one machine
 2026-11-13: a Draft raised for failing checks is undrafted by pr-monitor once its draft_reason is resolved, not by asking the user
 2026-11-11: the create guard also catches bash/sh -c and wrappers with their arguments (env -u, sudo -u, timeout 60), and skips heredoc bodies written as data while still checking the heredoc's own line; a review found both gaps
 2026-11-11: the only way to open an MR, one run per MR in a batch; step 5's creates carry PR_RAISE=1 and a PreToolUse hook (hooks/mr_create_guard.py) blocks any other `glab mr create` / `gh pr create`. A coordinator opened 8 MRs by hand and none got a pr-monitor

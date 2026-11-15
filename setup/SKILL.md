@@ -13,9 +13,11 @@ description: >-
 
 # Setup
 
-The list is `setup/third-party.json` in the ai-skills repo
-(`~/codebase/ai-skills`); `setup/install.sh` applies it. The script does the
-installing; you run it, read its report and change the list.
+The list is `setup/third-party.json` in the ai-skills repo; `setup/install.sh`
+applies it. The script does the installing; you run it, read its report and
+change the list. The repo is wherever this skill really lives: `AI=$(dirname
+"$(readlink -f <this skill's base directory>)")`, since the base directory is
+usually a link in `~/.claude/skills`.
 
 ## Ground rules
 
@@ -39,9 +41,13 @@ installing; you run it, read its report and change the list.
 ## Set up a machine
 
 ```bash
-~/codebase/ai-skills/install.sh          # links this repo's skills, then runs setup/install.sh
-~/codebase/ai-skills/setup/install.sh --check   # report only
+"$AI/install.sh"                # links this repo's skills, then runs setup/install.sh
+"$AI/setup/install.sh" --check  # report only
 ```
+
+On a new machine nothing is linked yet: clone the repo anywhere and run its
+`install.sh`. Run it from that main checkout, not a worktree, since the links
+it makes point at the checkout it runs from.
 
 Each line is `ok`, `added`, `removed`, `optional` (a tool only some skills
 need), `untracked`, `missing`, `skipped`, `failed` or `stale` (a link to a
@@ -73,9 +79,6 @@ and what each needs: a tool to install, a sign-in (`glab auth login`,
 Delete its entry and run `setup/install.sh`: it removes the link (`removed`)
 and keeps the clone in the cache. For a plugin, also `claude plugin uninstall
 <name@marketplace>`; the script doesn't uninstall plugins.
-
-Run the script from the main checkout (`~/codebase/ai-skills`), so its links
-point there.
 
 ## Untracked skills
 
