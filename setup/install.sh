@@ -13,14 +13,21 @@ shopt -s nullglob
 US=$'\x1f'  # field separator for jq rows; not whitespace, so empty fields survive read
 
 say() { printf '%-10s %s\n' "$1" "$2"; }
+command -v jq >/dev/null || { say missing "tool jq (reads the list): brew install jq"; exit 1; }
 
-# Tools: report missing ones with their install command; installing them is left to the user.
-while IFS=$US read -r name install for; do
-  if command -v "$name" >/dev/null; then say ok "tool $name"; else say missing "tool $name ($for): $install"; fail=1; fi
-done < <(jq -r '.tools[] | [.name, .install, (.for // "")] | join("\u001f")' "$LIST")
+# Tools: report missing ones with their install command; installing them is left to the user. Optional ones don't fail the run.
+while IFS=$US read -r name install for optional; do
+  if command -v "$name" >/dev/null; then say ok "tool $name"
+  elif [[ $optional == true ]]; then say optional "tool $name ($for): $install"
+  else say missing "tool $name ($for): $install"; fail=1; fi
+done < <(jq -r '.tools[] | [.name, .install, (.for // ""), (.optional // false | tostring)] | join("\u001f")' "$LIST")
 
-if command -v claude >/dev/null; then
-  have_mp=$(claude plugin marketplace list --json | jq -r '.[].name')
+# A failing listing skips only the plugin section, so the skills below still run.
+if ! command -v claude >/dev/null; then
+  say missing "claude CLI: plugins and marketplaces not checked"; fail=1
+elif ! have_mp=$(claude plugin marketplace list --json | jq -r '.[].name') || ! have_pl=$(claude plugin list --json | jq -r '.[].id'); then
+  say failed "claude plugin list --json: plugins and marketplaces not checked"; fail=1
+else
   while IFS=$US read -r name repo; do
     if grep -qx "$name" <<<"$have_mp"; then say ok "marketplace $name"
     elif [[ -n $check ]]; then say missing "marketplace $name ($repo)"; fail=1
@@ -28,15 +35,12 @@ if command -v claude >/dev/null; then
     fi
   done < <(jq -r '.marketplaces[] | [.name, .repo] | join("\u001f")' "$LIST")
 
-  have_pl=$(claude plugin list --json | jq -r '.[].id')
   while read -r id; do
     if grep -qx "$id" <<<"$have_pl"; then say ok "plugin $id"
     elif [[ -n $check ]]; then say missing "plugin $id"; fail=1
     else claude plugin install "$id" >/dev/null && say added "plugin $id" || { say failed "plugin $id (run: claude plugin install $id)"; fail=1; }
     fi
   done < <(jq -r '.plugins[]' "$LIST")
-else
-  say missing "claude CLI: plugins and marketplaces not checked"; fail=1
 fi
 
 # Git skills: a clone per skill at its pinned ref, linked into the skills dir.
@@ -46,6 +50,7 @@ while IFS=$US read -r name repo path ref; do
   if [[ -L $link && "$(readlink "$link")" == "$src" && "$(git -C "$clone" rev-parse HEAD 2>/dev/null)" == "$ref" ]]; then say ok "skill $name"; continue; fi
   if [[ -n $check ]]; then say missing "skill $name ($repo@${ref:0:7})"; fail=1; continue; fi
   [[ -d $clone/.git ]] || git clone -q "$repo" "$clone" || { say failed "skill $name: cannot clone $repo"; fail=1; continue; }
+  git -C "$clone" remote set-url origin "$repo"
   git -C "$clone" fetch -q origin "$ref" && git -C "$clone" checkout -q --detach "$ref" || true
   # Link only the pinned commit: a failed fetch leaves the clone on unread code.
   [[ "$(git -C "$clone" rev-parse HEAD)" == "$ref" ]] || { say failed "skill $name: cannot check out $ref"; fail=1; continue; }

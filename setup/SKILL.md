@@ -40,8 +40,9 @@ installing; you run it, read its report and change the list.
 ~/codebase/ai-skills/setup/install.sh --check   # report only
 ```
 
-Each line is `ok`, `added`, `missing`, `skipped`, `failed` or `untracked`;
-exit 1 when anything isn't `ok`/`added`/`untracked`. Report the non-`ok` lines
+Each line is `ok`, `added`, `removed`, `optional` (a tool only some skills
+need), `untracked`, `missing`, `skipped`, `failed` or `stale` (a link to a
+skill no longer listed; `--check` only); exit 1 on any of the last four. Report the non-`ok` lines
 and what each needs: a tool to install, a sign-in (`glab auth login`,
 `gh auth login`), a plugin command to confirm, or a real folder in the way
 (`skipped`: it was copied in by hand; offer to list it and replace it).

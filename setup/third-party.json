@@ -32,6 +32,6 @@
     {"name": "gh", "install": "brew install gh", "for": "pr-raise, pr-monitor, pr-takeover (GitHub)"},
     {"name": "jq", "install": "brew install jq", "for": "pr-monitor, ticket-manager"},
     {"name": "python3", "install": "brew install python", "for": "session-manager, ticket-manager, pr-raise guard"},
-    {"name": "idevicebackup2", "install": "brew install libimobiledevice", "for": "whatsapp-backup"}
+    {"name": "idevicebackup2", "install": "brew install libimobiledevice", "for": "whatsapp-backup", "optional": true}
   ]
 }
