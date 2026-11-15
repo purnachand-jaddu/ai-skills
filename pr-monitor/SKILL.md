@@ -77,8 +77,11 @@ ready again. Fixing is `pr-takeover`'s job.
     loop, and on t3 settle your own thread:
     `t3_thread_organize` (`settle`, no `threadId`; it applies when your turn
     ends). The caller forgets you on this event (session-manager "Stopping on t3").
-    A later tick with `final_event_at` set: send nothing,
-    schedule nothing, settle again (a message un-settles the thread);
+    A later tick with `final_event_at` set and the MR still merged or
+    closed: send nothing, schedule nothing, settle again (a message
+    un-settles the thread). Reopened, or a new watch on a state file with
+    `closed_out` (the heartbeat skips those): delete `final_event_at` and
+    `closed_out`, call `watch_pull_request` again and run the check;
   - stuck: auth failure, API errors on two runs in a row, or a blocked dialog.
   The calling session relays them; you never ask the user directly.
 - **A `mr-<iid> nudge` from the caller** (a push): run a check now and start the
@@ -197,8 +200,12 @@ once:
   - GitHub: `gh pr ready <n> --undo`
   - Write the reasons into the state file's `draft_reason` (a JSON array, one
     string per issue) and `drafted_at`, so the next run knows this skill drafted
-    it and why. `drafted_at` is the server's time of that draft change (the
-    note or timeline event below), not the local clock.
+    it and why. `drafted_at` is that draft change's `created_at` copied
+    verbatim, never the local clock:
+    - GitLab: `glab api "projects/<pid>/merge_requests/<iid>/notes?sort=desc&order_by=created_at&per_page=100"`,
+      the first system note "marked this merge request as **draft**";
+    - GitHub: `gh api repos/{owner}/{repo}/issues/<n>/timeline --paginate`,
+      the last `convert_to_draft` event.
 - **Already Draft with `draft_reason`:** add this run's new valid issues to
   it, then check "Undrafting". Drafted by hand (no `draft_reason`): leave it.
 - **Not Draft at the snapshot but `draft_reason` set:** someone undrafted it; move it to
@@ -216,13 +223,14 @@ once:
   - Re-snapshot: same head (`review.reviewed_sha`), no new notes or threads,
     same pipeline status, no conflicts. Anything new: triage it and skip the
     undraft this run.
-  - The latest draft change is yours: on GitLab the last system note "marked
-    this merge request as **draft**", on GitHub the last `convert_to_draft`
-    timeline event. Made after `drafted_at`: the user drafted it by hand; move
+  - The latest draft change is yours: read it as when drafting (the
+    snapshot drops system notes) and compare as instants, not strings. Made
+    after `drafted_at`: the user drafted it by hand; move
     `draft_reason` to `undrafted: {at, sha, by: "user"}`, leave it Draft and
     send `stays Draft (drafted by hand at <time>)`. No `drafted_at` (older
     state): don't undraft; send `stays Draft (no drafted_at; undraft by hand)`
-    once. A string `draft_reason` (older state) is one issue per line.
+    once per head (`stays_draft_sent`). A string `draft_reason` (older
+    state) is one issue per line.
 
   Then move `draft_reason` to `undrafted: {at, sha, why}` in the state file and
   send `mr-<iid> event: undrafted (<why>)`. Only a Should fix or a flake left:
