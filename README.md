@@ -14,6 +14,7 @@ flowchart TD
     pair[pair-programming]
     monitor[pr-monitor]
     prreview[pr-review]
+    setup[setup]
   end
   subgraph services["Shared services"]
     tickets[ticket-manager]
@@ -33,6 +34,7 @@ flowchart TD
   pair -->|reviewer| review
   prreview -->|delegates| review
   pair -->|helpers| sessions
+  setup -->|list changes| raise
 ```
 
 Every skill loads `skill-improve` when its output misses. `whatsapp-backup` and `oss-explore` have no other links.
@@ -40,9 +42,11 @@ Every skill loads `skill-improve` when its output misses. `whatsapp-backup` and 
 ## Setup
 
 ```bash
-~/codebase/ai-skills/install.sh                # symlinks skills into ~/.claude/skills
+~/codebase/ai-skills/install.sh                # symlinks skills into ~/.claude/skills, then runs setup/install.sh
 $EDITOR ~/.config/ticket-manager/config.toml   # base_url (with /api), workspace_id, workspace_slug
 ```
+
+Third-party plugins, skills and CLI tools are listed in `setup/third-party.json`; `setup/install.sh` installs them (`--check` only reports, and lists skill folders nobody recorded). Ask the `setup` skill to add one.
 
 Optional: `~/codebase/ai-skills/pr-monitor/launchd/install-heartbeat.sh` restarts monitor loops that died and syncs tickets on merge, every 10 minutes (GitLab MRs, monitors on T3, macOS) (`--uninstall` removes it).
 
