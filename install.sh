@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Symlink every skill into ~/.claude/skills and seed the ticket-manager config.
+# Symlink every skill into ~/.claude/skills, seed the ticket-manager config, then run setup/install.sh (plugins, git skills, tools).
 # Safe to re-run. Never overwrites a real (non-symlink) directory or an existing config.
 set -euo pipefail
 AI="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -28,3 +28,6 @@ if [ ! -f "$TM_CONFIG" ]; then
   cp "$AI/config/ticket-manager.toml.example" "$TM_CONFIG"
   echo "created $TM_CONFIG — set base_url, workspace_id and workspace_slug"
 fi
+
+# third-party plugins, skills and tools (setup/third-party.json)
+"$AI/setup/install.sh"
