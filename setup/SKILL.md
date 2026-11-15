@@ -29,8 +29,11 @@ installing; you run it, read its report and change the list.
   and any scripts it ships; say what it runs, needs, and sends anywhere.
 - **Tools are reported, not installed.** The script prints the install line for
   a missing CLI; run it only on the user's yes.
-- **A plugin that installs by running a command** asks for confirmation; show
-  the user the command and let them accept it. Never pass `-y` yourself.
+- **A plugin that installs by running a command** asks for confirmation, which
+  your shell (no TTY) can't give: run `claude plugin install <id> --json`, show
+  the user its `shownCommand`, and only on their yes re-run with
+  `--accept-command <shownCommand.sha256>`. Or ask them to run it in their
+  terminal. Never pass `-y`.
 - Changing the list ends in an MR: `pr-raise`.
 
 ## Set up a machine

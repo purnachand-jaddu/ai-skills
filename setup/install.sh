@@ -38,7 +38,8 @@ else
   while read -r id; do
     if grep -qx "$id" <<<"$have_pl"; then say ok "plugin $id"
     elif [[ -n $check ]]; then say missing "plugin $id"; fail=1
-    else claude plugin install "$id" >/dev/null && say added "plugin $id" || { say failed "plugin $id (run: claude plugin install $id)"; fail=1; }
+    elif out=$(claude plugin install "$id" 2>&1 </dev/null); then say added "plugin $id"
+    else say failed "plugin $id (run: claude plugin install $id)"; sed 's/^/           /' <<<"$out"; fail=1
     fi
   done < <(jq -r '.plugins[]' "$LIST")
 fi
@@ -50,8 +51,8 @@ while IFS=$US read -r name repo path ref; do
   if [[ -L $link && "$(readlink "$link")" == "$src" && "$(git -C "$clone" rev-parse HEAD 2>/dev/null)" == "$ref" ]]; then say ok "skill $name"; continue; fi
   if [[ -n $check ]]; then say missing "skill $name ($repo@${ref:0:7})"; fail=1; continue; fi
   [[ -d $clone/.git ]] || git clone -q "$repo" "$clone" || { say failed "skill $name: cannot clone $repo"; fail=1; continue; }
-  git -C "$clone" remote set-url origin "$repo"
-  git -C "$clone" fetch -q origin "$ref" && git -C "$clone" checkout -q --detach "$ref" || true
+  { git -C "$clone" remote set-url origin "$repo" || git -C "$clone" remote add origin "$repo"; } 2>/dev/null &&
+    git -C "$clone" fetch -q origin "$ref" && git -C "$clone" checkout -q --detach "$ref" || true
   # Link only the pinned commit: a failed fetch leaves the clone on unread code.
   [[ "$(git -C "$clone" rev-parse HEAD)" == "$ref" ]] || { say failed "skill $name: cannot check out $ref"; fail=1; continue; }
   [[ -f $src/SKILL.md ]] || { say failed "skill $name: no SKILL.md at $path"; fail=1; continue; }
