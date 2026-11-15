@@ -14,6 +14,8 @@ US=$'\x1f'  # field separator for jq rows; not whitespace, so empty fields survi
 
 say() { printf '%-10s %s\n' "$1" "$2"; }
 command -v jq >/dev/null || { say missing "tool jq (reads the list): brew install jq"; exit 1; }
+jq -e '[.marketplaces, .plugins, .skills, .tools] | all(type == "array")' "$LIST" >/dev/null ||
+  { say failed "list $LIST: unreadable, or missing the marketplaces, plugins, skills or tools array"; exit 1; }
 
 # Tools: report missing ones with their install command; installing them is left to the user. Optional ones don't fail the run.
 while IFS=$US read -r name install for optional; do
@@ -25,18 +27,24 @@ done < <(jq -r '.tools[] | [.name, .install, (.for // ""), (.optional // false |
 # A failing listing skips only the plugin section, so the skills below still run.
 if ! command -v claude >/dev/null; then
   say missing "claude CLI: plugins and marketplaces not checked"; fail=1
-elif ! have_mp=$(claude plugin marketplace list --json | jq -r '.[].name') || ! have_pl=$(claude plugin list --json | jq -r '.[].id'); then
+elif ! have_mp=$(claude plugin marketplace list --json | jq -r '.[] | "\(.name)\u001f\(.repo // .url // "")"') ||
+     ! plugins=$(claude plugin list --json | jq -r '.[] | select(.scope == "user") | "\(.id)\u001f\(.enabled)"'); then
   say failed "claude plugin list --json: plugins and marketplaces not checked"; fail=1
 else
   while IFS=$US read -r name repo; do
-    if grep -qx "$name" <<<"$have_mp"; then say ok "marketplace $name"
+    present=$(awk -F "$US" -v n="$name" '$1 == n {print "y"}' <<<"$have_mp")
+    added_from=$(awk -F "$US" -v n="$name" '$1 == n {print $2}' <<<"$have_mp")
+    if [[ -n $present && $added_from == "$repo" ]]; then say ok "marketplace $name"
+    elif [[ -n $present ]]; then say failed "marketplace $name: added from ${added_from:-a non-GitHub source}, listed as $repo"; fail=1
     elif [[ -n $check ]]; then say missing "marketplace $name ($repo)"; fail=1
     else claude plugin marketplace add "$repo" >/dev/null && say added "marketplace $name" || { say failed "marketplace $name ($repo)"; fail=1; }
     fi
   done < <(jq -r '.marketplaces[] | [.name, .repo] | join("\u001f")' "$LIST")
 
   while read -r id; do
-    if grep -qx "$id" <<<"$have_pl"; then say ok "plugin $id"
+    enabled=$(awk -F "$US" -v n="$id" '$1 == n {print $2}' <<<"$plugins")
+    if [[ $enabled == true ]]; then say ok "plugin $id"
+    elif [[ $enabled == false ]]; then say failed "plugin $id is disabled (claude plugin enable $id)"; fail=1
     elif [[ -n $check ]]; then say missing "plugin $id"; fail=1
     elif out=$(claude plugin install "$id" 2>&1 </dev/null); then say added "plugin $id"
     else say failed "plugin $id (run: claude plugin install $id)"; sed 's/^/           /' <<<"$out"; fail=1
