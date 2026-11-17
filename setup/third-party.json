@@ -4,7 +4,8 @@
     {"name": "cloudflare", "repo": "cloudflare/skills"},
     {"name": "ponytail", "repo": "DietrichGebert/ponytail"},
     {"name": "cctop", "repo": "st0012/cctop"},
-    {"name": "portal", "repo": "spotify/portal-ai-plugins"}
+    {"name": "portal", "repo": "spotify/portal-ai-plugins"},
+    {"name": "caldo-skills", "repo": "caldoai/skills"}
   ],
   "plugins": [
     "superpowers@claude-plugins-official",
@@ -16,7 +17,8 @@
     "ponytail@ponytail",
     "cctop@cctop",
     "portal@portal",
-    "shunt@portal"
+    "shunt@portal",
+    "untangle-codebase@caldo-skills"
   ],
   "skills": [
     {
