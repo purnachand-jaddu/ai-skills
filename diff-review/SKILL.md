@@ -185,7 +185,7 @@ Should fix
    Verified: read Run and its 2 callers
    Suggest: rename to `RunAndPruneReleases`, or split out the delete
 
-Checks: gofmt, go vet, golangci-lint pass; unit tests pass; integration not run (no TEST_DATABASE_URL); surface-review ran (1 finding)
+Checks: gofmt, go vet, golangci-lint pass; unit tests pass; integration not run (no TEST_DATABASE_URL); <repo review skill> ran (1 finding)
 Lenses with nothing found: parity, compatibility, security
 Not counted: 1 naming preference (no rule)
 ```
