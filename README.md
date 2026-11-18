@@ -37,13 +37,14 @@ flowchart TD
   setup -->|list changes| raise
 ```
 
-Every skill loads `skill-improve` when its output misses. `whatsapp-backup` and `oss-explore` have no other links.
+Every skill loads `skill-improve` when its output misses. `whatsapp-backup`, `oss-explore` and `machines` have no other links.
 
 ## Setup
 
 ```bash
 ./install.sh                                   # from the repo root; symlinks skills into ~/.claude/skills, then runs setup/install.sh
 $EDITOR ~/.config/ticket-manager/config.toml   # base_url (with /api), workspace_id, workspace_slug
+$EDITOR ~/.config/machines/config.toml         # your tailnet machines: login, role, what's installed
 ```
 
 Third-party plugins, skills and CLI tools are listed in `setup/third-party.json`; `setup/install.sh` installs them (`--check` only reports, and lists skill folders nobody recorded). Ask the `setup` skill to add one.
