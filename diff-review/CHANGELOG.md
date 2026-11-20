@@ -2,6 +2,7 @@
 2026-11-11: a review runs in one fresh reviewer thread through session-manager, which reports and settles itself; the caller verifies the findings and cleans up. User wanted reviews off the main thread and the thread closed when done
 # diff-review changelog
 
+- 2026-11-20: repo review skills are found with a named command on every review, re-reviews included, and the Checks line must name each one found (`ran (N findings)`, `skipped: added by this change` the only skip) or `none (searched … at <sha>)`; the caller, pr-monitor and pr-takeover don't accept a report without that entry. Only 2 of 5 reviewers on !992 ran the committed surface-review, and one reported "none".
 - 2026-11-17: runs the repo's own review skills (`*-review` under `.agents/skills/` or `.claude/skills/`) as part of step 2, so repo-only rules such as a legacy product name in new telemetry are checked on every review. Skills are read from the target branch and run under diff-review's ground rules, so a change cannot set its own review rules.
 - 2026-11-09: new Layers and phases lens: a phase-named step that branches on a platform or provider value already dispatched elsewhere, or a field that only carries state between two functions; Parity's single-`if` exemption no longer covers a value dispatched elsewhere. Missed by two reviews and a pair review of correct code.
 - 2026-11-08: a boolean-returning function reads as a predicate at its call site (`shouldRunCases()`, not `runsCases()`), reported as Minor; from a review comment that renamed such an interface method.
