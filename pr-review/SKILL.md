@@ -13,7 +13,7 @@ description: >-
 # PR review
 
 Load the `diff-review` skill and run it with the PR/MR as its target (number,
-URL or branch, as given). Follow it as written; this skill adds nothing to it.
+URL or branch, as given). Follow it as written.
 
 No PR/MR given: let `diff-review` find the one for the current branch.
 
@@ -29,7 +29,7 @@ in hand. diff-review stays read-only; the posting happens here, after its report
    `severity`, `title`, `path` and `line` (the line it cites), and `body`, the
    report's detail plus its `Scenario:` and `Suggest:` lines, as written.
 3. **Post** with `~/.claude/skills/pr-review/scripts/post-findings.py <mr-or-pr-url>
-   <json> --verdict "<the report's first line>" --reviewed <sha the review read>
+   <json> --verdict "<the verdict line after verification>" --reviewed <sha the review read>
    --model <model> --provider <provider> --harness <harness>`. Run it with `--dry-run` first and check the plan.
    The three names are yours, as you run now: for example `Claude Opus 5.5` /
    `Anthropic` / `Claude Code`, or a GPT model / `OpenAI` / `Codex`. Never

@@ -166,8 +166,10 @@ monitor's context stays small:
    "Reviewer thread": feature `mr-<iid>`, hidden, report file
    `~/.pr-monitor/<project>-<iid>-diff-<n>.md`. It starts the reviewer, verifies
    the findings and cleans up.
-2. Record `review: {reviewed_sha, verdict, findings, file}` (the verdict line, one-line titles) in the state
-   file, so the next run on the same head repeats nothing.
+2. Record `review: {reviewed_sha, verdict, findings, file}` (the verdict line
+   after verification, one-line titles) in the state file, so the next run on
+   the same head repeats nothing. A `review` with no `verdict` (older state)
+   counts as not reviewed.
 
 One reviewer at a time: if the head moves during a review, let it finish, then
 review the newest head, skipping those between.

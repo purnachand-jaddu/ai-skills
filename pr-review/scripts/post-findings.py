@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Post a review on a GitLab MR or GitHub PR: a summary note led by the verdict, then one line comment per finding on its added line, else a general comment.
 
-post-findings.py <mr-or-pr-url> <findings.json> --verdict "<report's first line>" --reviewed <sha> --model M --provider P --harness H [--dry-run]
+post-findings.py <mr-or-pr-url> <findings.json> --verdict "<Label>: <sentence>" --reviewed <sha> --model M --provider P --harness H [--dry-run]
+post-findings.py --self-test
 findings.json: [{"severity": "Should fix", "title": "...", "path": "a/b.go", "line": 42, "body": "markdown"}]
 """
 import argparse
@@ -134,7 +135,24 @@ def anchor(forge, f, reviewed, head, added):
     return line if line in added[path][1] else None
 
 
+def self_test():
+    diff = "@@ -1,2 +1,3 @@\n a\n+b\n c\n@@ -10 +11,2 @@\n-x\n+y\n+z\n\\ No newline at end of file"
+    assert added_lines(diff) == {2, 11, 12}, added_lines(diff)
+
+    class Stub:
+        def raw(self, path, sha):
+            return {"old": "a\nb\nc", "new": "a\nnew\nb\nc"}[sha]
+    added = {"f": ("f", {2, 3})}
+    assert anchor(Stub(), {"path": "f", "line": 2}, "old", "old", added) == 2
+    assert anchor(Stub(), {"path": "f", "line": 2}, "old", "new", added) == 3
+    assert anchor(Stub(), {"path": "f", "line": 1}, "old", "new", added) is None
+    assert anchor(Stub(), {"path": "g", "line": 2}, "old", "old", added) is None
+    print("ok")
+
+
 def main():
+    if sys.argv[1:] == ["--self-test"]:
+        return self_test()
     ap = argparse.ArgumentParser()
     ap.add_argument("url")
     ap.add_argument("findings")
@@ -145,8 +163,13 @@ def main():
     if not a.verdict.startswith(("Do not merge:", "Merge after fixes:", "Mergeable:")):
         sys.exit("--verdict must start with 'Do not merge:', 'Merge after fixes:' or 'Mergeable:'")
 
+    if not re.search(r"/-/merge_requests/\d+|/pull/\d+", a.url):
+        sys.exit(f"{a.url}: give the MR/PR web URL, not a number or branch")
     forge = GitLab(a.url) if "/-/merge_requests/" in a.url else GitHub(a.url)
     findings = json.load(open(a.findings))
+    for f in findings:
+        if f.get("line") is not None:
+            f["line"] = int(f["line"])
     head = forge.head()
     added = forge.added()
     posted = "\n".join(forge.bodies())

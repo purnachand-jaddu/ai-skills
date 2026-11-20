@@ -65,7 +65,8 @@ review to one fresh reviewer so only its report comes back. Inputs: `<feature>`
    "You are the reviewer. Load `diff-review` and review <scope> (patch: <path>);
    the report file is <file>." Then go on with other work.
 3. **When the report arrives:** verify each finding against the code and say
-   which you drop and why; show the report. Then `$SM forget` the reviewer (one
+   which you drop and why. If you drop any, set the verdict line again from the
+   findings left; callers use that line, not the reviewer's. Show the report. Then `$SM forget` the reviewer (one
    that didn't settle: session-manager "Stopping on t3") and
    `git worktree remove --force <tree>`.
 
@@ -168,12 +169,12 @@ you couldn't verify.
 
 ## 6. Report
 
-The first line is the verdict: exactly one label, set by the worst verified
-finding, then one sentence naming the findings that decide it.
+The first line is the verdict, `<Label>: <sentence>`: exactly one label, set by
+the worst verified finding, then one sentence naming the findings that decide it.
 
 | Label | When |
 |---|---|
-| **Do not merge** | any Fix before merge finding, or a repo check that fails (tests, lint, build) |
+| **Do not merge** | any Fix before merge finding, or a repo check (tests, lint, build) that fails on the head and passes on the target |
 | **Merge after fixes** | Should fix findings, nothing worse |
 | **Mergeable** | Minor findings only, or none; they are listed and don't block |
 
@@ -207,7 +208,8 @@ Not counted: 1 naming preference (no rule)
 Severities: **Fix before merge** for a security hole, an authz/RBAC or
 tenant-isolation gap the change introduces, data loss, wrong results, a critical
 performance regression with a concrete worst case (an unbounded scan, N+1 on a
-hot path, a blocking migration), or a failing repo check; **Should fix** for
+hot path, a blocking migration), or a repo check the change breaks (one already
+failing on the target is reported as such and doesn't count); **Should fix** for
 real but latent or rare problems; **Minor** for unmeasured
 cost, placement or wording. A reader or maintainer cost alone is **Should fix** or
 **Minor**, never **Fix before merge**.
