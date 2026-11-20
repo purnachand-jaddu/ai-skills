@@ -29,8 +29,8 @@ in hand. diff-review stays read-only; the posting happens here, after its report
    `severity`, `title`, `path` and `line` (the line it cites), and `body`, the
    report's detail plus its `Scenario:` and `Suggest:` lines, as written.
 3. **Post** with `~/.claude/skills/pr-review/scripts/post-findings.py <mr-or-pr-url>
-   <json> --reviewed <sha the review read> --model <model> --provider <provider>
-   --harness <harness>`. Run it with `--dry-run` first and check the plan.
+   <json> --verdict "<the report's first line>" --reviewed <sha the review read>
+   --model <model> --provider <provider> --harness <harness>`. Run it with `--dry-run` first and check the plan.
    The three names are yours, as you run now: for example `Claude Opus 5.5` /
    `Anthropic` / `Claude Code`, or a GPT model / `OpenAI` / `Codex`. Never
    copy them from an example or an earlier comment.
@@ -40,6 +40,9 @@ in hand. diff-review stays read-only; the posting happens here, after its report
 What the script does, so you don't do it by hand:
 - **Header.** Each comment opens with `**Agent review** — <model> (<provider>),
   via <harness> · diff-review, verified at <sha>`, then the bold severity and title.
+- **Summary note first.** A general note opens with the verdict label in bold
+  (**Do not merge**, **Merge after fixes** or **Mergeable**), then its sentence and
+  one line per finding. A verdict without one of the three labels is refused.
 - **Anchoring.** It re-reads the MR's current `diff_refs`, so a head that moved
   since the review is caught. A finding goes on its line only when that line is
   an added line at the current head and its text is unchanged since `--reviewed`,

@@ -1,3 +1,4 @@
+2026-11-20: the pre-push review's verdict decides: Do not merge is a failed check (Draft), the other two put their findings in the plan. a !941 verdict read "mergeable once two parity gaps are fixed", so a reader could not tell whether to merge
 2026-11-16: scripts are called through ~/.claude/skills/<skill>/ instead of ~/codebase/ai-skills/, so the skill works wherever the repo is cloned. The repo path only held on one machine
 2026-11-13: a Draft raised for failing checks is undrafted by pr-monitor once its draft_reason is resolved, not by asking the user
 2026-11-11: the create guard also catches bash/sh -c and wrappers with their arguments (env -u, sudo -u, timeout 60), and skips heredoc bodies written as data while still checking the heredoc's own line; a review found both gaps

@@ -152,7 +152,7 @@ gh api graphql -f query='...reviewThreads{nodes{isResolved comments{nodes{body p
 | **Unit tests** | `pipeline.tests` (GitLab test report), job logs | Any failed or errored test on the head sha. Name the tests. |
 | **Coverage** | `pipeline.coverage` vs `pipeline.target_coverage` | Drop of more than 0.5 percentage points against the target, or below a floor the repo declares (Makefile, CI config, `CLAUDE.md`). None reported is not an issue; say it isn't measured. |
 | **Merge conflicts** | `mr.has_conflicts`, `merge_status` | Conflicts with the target branch. |
-| **Code review** | the MR diff, via `diff-review` in a fresh reviewer | Only when the head sha differs from `review.reviewed_sha` in the state file; see "Reviewing a new head". **Fix before merge** is a valid issue; **Should fix** and **Minor** are reported, not drafted. |
+| **Code review** | the MR diff, via `diff-review` in a fresh reviewer | Only when the head sha differs from `review.reviewed_sha` in the state file; see "Reviewing a new head". The report's verdict decides: **Do not merge** is a valid issue (Draft); **Merge after fixes** and **Mergeable** are reported, not drafted. |
 
 Merge status alone (`not_approved`, waiting for review) is information, not an
 issue.
@@ -166,7 +166,7 @@ monitor's context stays small:
    "Reviewer thread": feature `mr-<iid>`, hidden, report file
    `~/.pr-monitor/<project>-<iid>-diff-<n>.md`. It starts the reviewer, verifies
    the findings and cleans up.
-2. Record `review: {reviewed_sha, findings, file}` (one-line titles) in the state
+2. Record `review: {reviewed_sha, verdict, findings, file}` (the verdict line, one-line titles) in the state
    file, so the next run on the same head repeats nothing.
 
 One reviewer at a time: if the head moves during a review, let it finish, then
@@ -223,8 +223,8 @@ once:
   `gh pr ready <n>`) when all of these hold on the current head:
   - this run found no valid issue, and every `draft_reason` issue is verified
     resolved;
-  - the latest `diff-review` is of this head (`review.reviewed_sha`) and has no
-    Fix before merge and no Should fix;
+  - the latest `diff-review` is of this head (`review.reviewed_sha`) and its
+    verdict is **Mergeable**;
   - the head pipeline passed, or the repo has no CI; none is running;
   - no conflicts, no unresolved valid thread, no review batch still open.
 

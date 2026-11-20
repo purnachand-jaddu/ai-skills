@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Post verified review findings on a GitLab MR or GitHub PR: one line comment per finding on its added line, else one general comment.
+"""Post a review on a GitLab MR or GitHub PR: a summary note led by the verdict, then one line comment per finding on its added line, else a general comment.
 
-post-findings.py <mr-or-pr-url> <findings.json> --reviewed <sha> --model M --provider P --harness H [--dry-run]
+post-findings.py <mr-or-pr-url> <findings.json> --verdict "<report's first line>" --reviewed <sha> --model M --provider P --harness H [--dry-run]
 findings.json: [{"severity": "Should fix", "title": "...", "path": "a/b.go", "line": 42, "body": "markdown"}]
 """
 import argparse
@@ -138,10 +138,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("url")
     ap.add_argument("findings")
-    for a in ("--reviewed", "--model", "--provider", "--harness"):
+    for a in ("--verdict", "--reviewed", "--model", "--provider", "--harness"):
         ap.add_argument(a, required=True)
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
+    if not a.verdict.startswith(("Do not merge:", "Merge after fixes:", "Mergeable:")):
+        sys.exit("--verdict must start with 'Do not merge:', 'Merge after fixes:' or 'Mergeable:'")
 
     forge = GitLab(a.url) if "/-/merge_requests/" in a.url else GitHub(a.url)
     findings = json.load(open(a.findings))
@@ -151,7 +153,22 @@ def main():
     at = f"verified at `{a.reviewed[:8]}`" + ("" if head.startswith(a.reviewed) else f", cited lines checked at `{head[:8]}`")
     header = f"**Agent review** — {a.model} ({a.provider}), via {a.harness} · diff-review, {at}"
     failed = 0
-    for f in findings:
+    label, _, why = a.verdict.partition(":")
+    items = "".join(f"\n- {f['severity']}: {f['title']}" + (f" (`{f['path']}:{f.get('line')}`)" if f.get("path") else "") for f in findings)
+    summary = {"summary": True, "body": f"{header}\n\n**{label}**:{why}\n{items}\n\n<!-- agent-review:summary:{a.reviewed[:12]} -->"}
+    for f in [summary] + findings:
+        if f.get("summary"):
+            if f["body"].rsplit("\n", 1)[1] in posted:
+                print("skipped   summary: already posted")
+            elif a.dry_run:
+                print("summary\n" + "\n".join("    " + ln for ln in f["body"].splitlines()))
+            else:
+                try:
+                    print(f"summary   {forge.post_general(f['body'])}")
+                except RuntimeError as e:
+                    failed = 1
+                    print(f"failed    summary: {e}")
+            continue
         key = hashlib.sha1(f"{f.get('path')}\n{f['title']}".encode()).hexdigest()[:12]
         marker = f"<!-- agent-review:{key} -->"
         where = f"{f['path']}:{f.get('line')}" if f.get("path") else "(no file)"
