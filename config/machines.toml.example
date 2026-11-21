@@ -1,0 +1,18 @@
+# ~/.config/machines/config.toml, read by the machines skill.
+# Stable facts only: online state and IPs come from `tailscale status --json`.
+# Never a password, key or token. A machine without login or role is unverified.
+
+[machines.example-mac]          # its MagicDNS name, the first label of DNSName
+os = "macOS"
+arch = "arm64"
+login = "alice"
+role = "macOS e2e"
+installed = { go = "/opt/homebrew/bin/go" }
+notes = "`bob` refused by tailnet policy"
+
+[machines.example-pc]
+os = "windows"
+
+[machines.example-phone]
+os = "iOS"
+role = "not a run target"
