@@ -4,13 +4,16 @@ set -euo pipefail
 STATE_DIR=${PR_MONITOR_DIR:-$HOME/.pr-monitor}
 mkdir -p "$STATE_DIR"
 
+# One glab call, retried once; a stalled call gives up after 20s instead of hanging the check.
+call() { local out; for _ in 1 2; do out=$(timeout 20 glab "$@" 2>/dev/null) && { print -r -- "$out"; return 0; }; done; return 1; }
 # The MR: an explicit number or URL, else the one for the current branch.
-mr=$(glab mr view ${1:-} -F json 2>/dev/null) || { echo '{"error":"no merge request found; pass a number or URL"}'; exit 1; }
+mr=$(call mr view ${1:-} -F json) || { print -r -- '{"error":"glab mr view failed twice (20s limit each); pass a number or URL, or retry"}'; exit 1; }
 pid=$(jq -r .project_id <<<"$mr"); iid=$(jq -r .iid <<<"$mr"); target=$(jq -r .target_branch <<<"$mr")
-api() { glab api "$1" 2>/dev/null || echo 'null'; }
+api() { call api "$1" || print -r -- 'null'; }
 
 # Review threads: unresolved resolvable ones, and every human note with its id so new ones can be told apart.
-discussions=$(api "projects/$pid/merge_requests/$iid/discussions?per_page=100")
+# Threads decide the verdict, so a failed call is an error, never zero threads.
+discussions=$(call api "projects/$pid/merge_requests/$iid/discussions?per_page=100") || { print -r -- '{"error":"discussions call failed twice (20s limit each); thread counts unknown, retry"}'; exit 1; }
 threads=$(jq '[.[]? | select(.notes[0].system | not) | {id, resolvable: .notes[0].resolvable, resolved: (.notes | all(.resolved // false)), path: .notes[0].position.new_path, line: .notes[0].position.new_line, notes: [.notes[] | {id, author: .author.username, created_at, body: (.body | .[0:600])}]}]' <<<"$discussions")
 
 # Head pipeline, its failed jobs and test summary.
@@ -49,5 +52,5 @@ snapshot=$(jq -n --argjson mr "$mr" --argjson threads "$threads" --argjson pipel
 jq -n --argjson s "$snapshot" --argjson threads "$threads" '{sha: $s.mr.sha, pipeline_id: $s.pipeline.id, pipeline_status: $s.pipeline.status,
   last_note_id: ([$threads[] | .notes[] | .id] | max // 0), draft_reason: null, checked_at: (now | todate)}' > "$state.tmp"
 # Keep fields the skill writes (draft_reason, review, ticket) across runs; fresh snapshot fields win.
-jq -s '.[1] + .[0] + {draft_reason: (.[1].draft_reason // null)}' "$state.tmp" <(echo "$prev") > "$state" && rm -f "$state.tmp"
-echo "$snapshot"
+jq -s '.[1] + .[0] + {draft_reason: (.[1].draft_reason // null)}' "$state.tmp" <(print -r -- "$prev") > "$state" && rm -f "$state.tmp"
+print -r -- "$snapshot"
