@@ -51,8 +51,9 @@ ready again. Fixing is `pr-takeover`'s job.
     closed, from any source;
   - a `mr-<iid> question from the user:` message is not an event: answer the
     user from what you know of why the code changed (didn't write it: say so,
-    and point to the MR description or its author); to show the answer in the
-    monitor thread too, send it with `$SM delegate` as `mr-<iid> answer: <text>`;
+    and point to the MR description or its author), and always send it back with
+    `$SM delegate` as `mr-<iid> answer: <text>`, so the user sees it in the
+    thread where they asked;
   - it is a child of the calling session and ends with it.
 - **When you are the monitor helper** (your first message says so): every
   `/loop` firing and every nudge is a check, never an echo to ignore: run the
@@ -110,7 +111,8 @@ ready again. Fixing is `pr-takeover`'s job.
   forwarded, and never guess the author's reasons. A `mr-<iid> answer:` from
   the caller: show it to the user, forward nothing. Either way end the turn
   with `ScheduleWakeup` (the /loop prompt, not the question), or the loop
-  ends; with `final_event_at` set, settle instead.
+  ends. With `final_event_at` set the caller has let you go: don't forward;
+  tell the user to ask in the caller's thread (`watched_by.caller`), then settle.
 
 ## Ground rules
 
