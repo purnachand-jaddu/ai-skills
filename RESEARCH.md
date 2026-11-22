@@ -23,7 +23,7 @@ How to research a question before answering it or building on it. Verify, don't 
 
 ## Method
 
-- Research in a helper agent so the main session stays small; independent questions go to parallel helpers
+- Use the helper agent the user has named for research; with none, offer one once for long research, and send independent questions to parallel helpers
 - Map the feature in question to the code that does it, end to end and per platform; don't summarise the whole project
 - Prove it by running the smallest throwaway program, outside the repo (e.g. `CGO_ENABLED=0` and `=1`, side by side)
 - Measure, don't guess: give the number, its unit and the tool that produced it, then rank fixes by measured gain
