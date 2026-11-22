@@ -19,11 +19,12 @@ How to research a question before answering it or building on it. Verify, don't 
 - Vendor docs, pricing pages, licence texts, changelogs, and the forge API for releases, commits, bus factor and issues
 - Published benchmarks only with who ran them; third-party blogs are leads, never the source of a price
 - Real data over invented examples: ask the user for real URLs, files or history
-- When a site blocks fetching, use search or `curl`, and still cite the URL
+- When a site blocks fetching, don't retry it: use search or another source, and cite what was used
 
 ## Method
 
-- Use the helper agent the user has named for research; with none, offer one once for long research, and send independent questions to parallel helpers
+- Use the helper agent the user has named for research; with none, offer one once for long research, otherwise research in this session
+  - Parallel helpers only with the user's yes; a helper never starts other agents
 - Map the feature in question to the code that does it, end to end and per platform; don't summarise the whole project
 - Prove it by running the smallest throwaway program, outside the repo (e.g. `CGO_ENABLED=0` and `=1`, side by side)
 - Measure, don't guess: give the number, its unit and the tool that produced it, then rank fixes by measured gain
@@ -53,7 +54,7 @@ How to research a question before answering it or building on it. Verify, don't 
 - Verdict first in one sentence, then at most 10 bullets, then the details
 - Answer the question that was asked, not a tour of the project
 - A helper writes its full result to a file and sends back a one-line verdict with the path
-- Research the user will share or keep goes in an artifact; findings to act on later become a ticket, with the user's yes
+- Research the user will share or keep goes in an artifact (Claude) or a file; findings to act on later become a ticket, with the user's yes
 
 ## Boundaries
 

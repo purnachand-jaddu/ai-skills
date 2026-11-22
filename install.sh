@@ -47,8 +47,8 @@ link_doc() {
 }
 link_doc CODING_STANDARD.md "$HOME/.claude" CLAUDE.md "@CODING_STANDARD.md"
 link_doc CODING_STANDARD.md "$HOME/.codex" AGENTS.md "Follow the coding standard in ~/.codex/CODING_STANDARD.md; read it before you write code."
-link_doc RESEARCH.md "$HOME/.claude" CLAUDE.md "Before researching anything, read ~/.claude/RESEARCH.md and follow it."
-link_doc RESEARCH.md "$HOME/.codex" AGENTS.md "Before researching anything, read ~/.codex/RESEARCH.md and follow it."
+link_doc RESEARCH.md "$HOME/.claude" CLAUDE.md "Before you state facts that change over time (prices, versions, licences), check a claim, compare options or settle feasibility, read ~/.claude/RESEARCH.md and follow it."
+link_doc RESEARCH.md "$HOME/.codex" AGENTS.md "Before you state facts that change over time (prices, versions, licences), check a claim, compare options or settle feasibility, read ~/.codex/RESEARCH.md and follow it."
 
 # third-party plugins, skills and tools (setup/third-party.json)
 "$AI/setup/install.sh"
