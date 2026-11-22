@@ -1,16 +1,16 @@
 # General Rules
 
-- Always start new designs with an interface
-  - Interfaces should be generic enough to swap providers without breaking changes
-  - All inter-layer communication must happen via interfaces (including DB layer)
+- Layers and providers talk through narrow interfaces declared by the code that calls them; an interface exists only where something holds it
+  - This includes the DB layer; keep an interface generic enough to swap a provider without breaking its callers
 - Reuse before creating: check utils or existing functions first
   - Prefer slight modification with different params over writing a new function
-- Preferred stack: Go (backend), Next.js (frontend), Postgres (primary DB), MySQL Lite (secondary)
+- Preferred stack: Go (backend), Next.js (frontend), Postgres (primary DB), SQLite (secondary)
 - Complex features need a flow diagram artifact
   - Should cover all states and data flow sequences
 - Multi-module deployments need a deployment plan
   - Define service order, risk of mid-deployment failure
 - If a feature touches existing flows, require a feature flag for gradual rollout
+- Never commit `.env` files, and never echo a token into logs, chat or files
 
 # API Server Rules
 
@@ -19,6 +19,18 @@
 - Always add observability checks so metrics stream to the observability platform
 - Paginate all APIs that could return large record sets; avoid single unbounded GET
 - Enforce RBAC: define who gets access to each API
+  - A route registry names the roles for each route, and a test sweeps every route for every role
+- Row-level authorization lives in the service; the handler passes the caller and makes one call
+- Every query filters by tenant in SQL, even after the service has checked access
+- A write that spans tables is one repository method that owns the transaction
+- Migrations run on boot under a lock; renaming or dropping a column others read is expand, then contract
+- A new filter or sort path ships its index in the same MR, built concurrently
+- Validate input at the boundary: a malformed id is a 400, and a client fault never surfaces as a database 500
+- One error envelope; a credential failure is a uniform 401/403, but an outage behind it stays a 5xx
+- Every request runs under a deadline
+- Background jobs are safe with several replicas (`SKIP LOCKED`, an advisory lock)
+- Store only hashes of tokens, consume single-use codes atomically, and seal secrets at rest
+- The API contract (OpenAPI) changes in the same MR as the code
 - No experimental package features for security
 - Tests required for every handler and service
   - Tests must fail if the feature is reverted
@@ -29,11 +41,30 @@
 - Third-party packages must be widely adopted in the community; avoid low-traction libraries
 - Prefer non-CGO packages over CGO packages
 - Security: restrict file/folder permissions to the minimum required (package-readable only, no root needed by others)
+  - Credentials are 0600; read a file a less-privileged user can write only after checking its owner, that it is not a symlink, and its size
+  - Size-cap and chunk every read of an untrusted local file
+- Local IPC binds to loopback, checks the Host header and allowlists clients; sensitive routes only on the permissioned socket
+- Auto-update verifies a signature against a key built into the binary; macOS binaries are signed and notarized
+- Vendor credentials never reach the endpoint; call vendors through a backend proxy
+- Per-user actions run as the logged-in user through the platform's session mechanism, never from root's environment
+- Save local sync state only after the server acknowledges it; on any doubt, resync in full
+- Third-party calls: bounded retries with backoff, honour `Retry-After`, keep the last-known values on a soft failure
+- An unattended install never blocks on a prompt or a browser
 - Each feature must have tests that fail if the feature breaks
 - Produce logs using the existing log framework to aid debugging
+  - Log files are bounded by size and age, with one writer each
 - Prefer CLI-first approach for endpoint-level features
 - Cross-platform compatibility required: macOS (Darwin), Linux, Windows
   - Any new package introduced must support all three platforms
+
+# Go Rules (API Server and Endpoint)
+
+- Structured logs: a constant message, snake_case fields, and request, tenant and trace ids from the context
+- Metric labels stay low-cardinality (a tenant id goes on spans); telemetry is a no-op when no exporter is set
+- Every background loop recovers a panic on each iteration
+- Platform code uses build constraints, not `runtime.GOOS`
+- Generated code is committed, and CI fails when it is stale
+- Integration tests run on a real database, one tenant per test, with `-race` and a virtual clock instead of sleeps
 
 # Frontend Rules
 
