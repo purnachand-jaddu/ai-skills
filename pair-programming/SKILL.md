@@ -47,7 +47,7 @@ Reviewers are not started up front; one is started per review.
 | Role | Lifetime | Where | May edit | Its rules (sent in the envelope) |
 |---|---|---|---|---|
 | **helper** | whole feature, reused | own worktree | yes, in its worktree | Do the task as scoped. Tell me which files you changed. |
-| **researcher** | the helper, given a research task | helper's worktree | no | Primary sources only (vendor docs, source code, changelogs) with URLs and the date read. Separate verified facts from inference. |
+| **researcher** | the helper, given a research task | helper's worktree | no | Follow `RESEARCH.md` in your agent's config dir (`~/.claude` or `~/.codex`). |
 | **tester** | the helper, given a test task | own worktree | tests only | Write and run tests for the scoped behaviour; prove each can fail. Report the commands and their results. |
 | **reviewer** | one review, then settles | `diff-review`'s scratch tree | no | Started by `diff-review` ("Reviewer thread"); its rules are that skill's. |
 
