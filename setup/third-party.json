@@ -27,6 +27,27 @@
       "path": "skills/tailscale",
       "ref": "4f05d353efc56962546aa26ccc59bb08ca699ad1",
       "docs": "https://tailscale.com/docs/features/tailscale-skill"
+    },
+    {
+      "name": "grill-with-docs",
+      "repo": "https://github.com/mattpocock/skills",
+      "path": "skills/engineering/grill-with-docs",
+      "ref": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "docs": "https://github.com/mattpocock/skills/blob/main/docs/engineering/grill-with-docs.md"
+    },
+    {
+      "name": "grilling",
+      "repo": "https://github.com/mattpocock/skills",
+      "path": "skills/productivity/grilling",
+      "ref": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "docs": "https://github.com/mattpocock/skills/blob/main/docs/productivity/grilling.md"
+    },
+    {
+      "name": "domain-modeling",
+      "repo": "https://github.com/mattpocock/skills",
+      "path": "skills/engineering/domain-modeling",
+      "ref": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "docs": "https://github.com/mattpocock/skills/blob/main/docs/engineering/domain-modeling.md"
     }
   ],
   "tools": [
