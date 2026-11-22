@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Symlink every skill into ~/.claude/skills, link CODING_STANDARD.md for Claude and Codex, seed the ticket-manager and machines configs, then run setup/install.sh.
-# Safe to re-run. Never overwrites a real (non-symlink) directory or an existing config.
+# Safe to re-run. Never overwrites a real (non-symlink) directory or an existing config; only appends one line to CLAUDE.md / AGENTS.md.
 set -euo pipefail
 AI="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
@@ -39,7 +39,7 @@ fi
 # Links CODING_STANDARD.md into an agent's config dir and adds its reference line to that agent's instructions file once.
 link_standard() {
   local dir=$1 file=$2 line=$3 link="$1/CODING_STANDARD.md"
-  [ -d "$dir" ] || return 0
+  [ -d "$dir" ] || { echo "skip the coding standard for $dir: not installed; re-run after installing it"; return 0; }
   if [ -e "$link" ] && [ ! -L "$link" ]; then echo "skip $link: exists and is not a symlink" >&2; return 0; fi
   ln -sfn "$AI/CODING_STANDARD.md" "$link"
   touch "$dir/$file"
