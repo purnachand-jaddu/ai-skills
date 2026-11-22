@@ -68,8 +68,9 @@ review to one fresh reviewer so only its report comes back. Inputs: `<feature>`
    skills entry in step 2's form, and that your own lookup (same filter) finds
    no review skill it leaves out or skips for another reason. Otherwise the
    review isn't finished: start a fresh reviewer for that step alone, or run it
-   here. Then verify each finding against the code and say
-   which you drop and why; show the report. Then `$SM forget` the reviewer (one
+   here. Then verify each finding against the code and say which you drop and
+   why. If you drop any, set the verdict line again from the findings left;
+   callers use that line, not the reviewer's. Show the report. Then `$SM forget` the reviewer (one
    that didn't settle: session-manager "Stopping on t3") and
    `git worktree remove --force <tree>`.
 
@@ -183,10 +184,24 @@ you couldn't verify.
 
 ## 6. Report
 
-Verdict first, then findings by severity, then what was checked.
+The first line is the verdict, `<Label>: <sentence>`: exactly one label, set by
+the worst verified finding, then one sentence naming the findings that decide it.
+
+| Label | When |
+|---|---|
+| **Do not merge** | any Fix before merge finding, or a repo check (tests, lint, build) that fails on the head and passes on the target |
+| **Merge after fixes** | Should fix findings, nothing worse |
+| **Mergeable** | Minor findings only, or none; they are listed and don't block |
+
+A check reported "not run" makes it **Merge after fixes** (run it), unless the
+report says why it doesn't matter. The label is the decision: never qualify it
+("mergeable once two gaps are fixed" is **Merge after fixes**). Then the
+findings by severity, then what was checked.
 
 ```
-Review of feat/x vs main (+ uncommitted): 3 findings (1 fix before merge, 2 should fix)
+Do not merge: 1 fix before merge (double charge on retry), 1 should fix (Run hides a delete).
+
+Review of feat/x vs main (+ uncommitted): 2 findings
 
 Fix before merge
 1. A retried checkout charges the card twice: orders/service.go:88
@@ -205,8 +220,12 @@ Lenses with nothing found: parity, compatibility, security
 Not counted: 1 naming preference (no rule)
 ```
 
-Severities: **Fix before merge** for wrong results, data loss or security;
-**Should fix** for real but latent or rare problems; **Minor** for unmeasured
+Severities: **Fix before merge** for a security hole, an authz/RBAC or
+tenant-isolation gap the change introduces, data loss, wrong results, a critical
+performance regression with a concrete worst case (an unbounded scan, N+1 on a
+hot path, a blocking migration), or a repo check the change breaks (one already
+failing on the target is reported as such and doesn't count); **Should fix** for
+real but latent or rare problems; **Minor** for unmeasured
 cost, placement or wording. A reader or maintainer cost alone is **Should fix** or
 **Minor**, never **Fix before merge**.
 

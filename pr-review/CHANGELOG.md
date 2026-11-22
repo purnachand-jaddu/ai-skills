@@ -1,1 +1,3 @@
+- 2026-11-20: the posted review opens with a summary note led by the verdict label (Do not merge, Merge after fixes, Mergeable). a !941 verdict read "mergeable once two parity gaps are fixed", so a reader could not tell whether to merge
+- 2026-11-20: posts the verified findings as one line comment each (a general one when no added line fits) through scripts/post-findings.py, only when the user asks; header names the reviewing model, provider and harness. The user posted !941's findings by hand and hit glab's non-nesting -F position
 - 2026-11-10: new skill, a name for PR reviews that hands the work to diff-review; user wanted a pr- skill for reviews

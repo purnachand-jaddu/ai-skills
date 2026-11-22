@@ -1,3 +1,4 @@
+2026-11-20: the review verdict is one label, Do not merge (any Fix before merge or a failing repo check), Merge after fixes (Should fix only) or Mergeable (Minor or nothing; an unrun check needs a reason), plus one sentence naming the deciding findings; Fix before merge now names authz/RBAC and tenant-isolation gaps, critical performance regressions and failing checks. a !941 verdict read "mergeable once two parity gaps are fixed", so a reader could not tell whether to merge
 2026-11-11: the reviewer's scratch tree goes in <repo>/.worktrees/, not ../; T3 refused to start a reviewer outside the project and every review fell back to the caller
 2026-11-11: a review runs in one fresh reviewer thread through session-manager, which reports and settles itself; the caller verifies the findings and cleans up. User wanted reviews off the main thread and the thread closed when done
 # diff-review changelog

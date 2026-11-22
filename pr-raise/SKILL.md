@@ -98,8 +98,9 @@ not run is reported as not run, never as passed.
 After the checks, run `diff-review` on everything going into this MR (committed
 plus the uncommitted part, without the files step 1 leaves out) through its
 "Reviewer thread", feature `<ticket-id>` or the branch slug. Wait for its
-report before step 4. A verified **Fix before merge** finding counts as a failed
-check; **Should fix** and **Minor** go in the plan for the user to decide.
+report before step 4. Its verdict decides: **Do not merge** counts as a failed
+check (Draft); the findings of **Merge after fixes** and **Mergeable** go in the
+plan for the user to decide, with the verdict first.
 
 ## 4. Propose the plan
 
