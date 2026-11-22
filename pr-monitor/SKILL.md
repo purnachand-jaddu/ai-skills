@@ -41,7 +41,7 @@ ready again. Fixing is `pr-takeover`'s job.
   - name `mr-<iid>-monitor`, role `monitor`, agent `claude`, labels
     `pair.feature=mr-<iid>`, cwd the repo checkout (a trusted folder, or the
     first message never arrives);
-  - first message: `/loop pr-monitor <mr-url> — monitor tick: you are the monitor helper; run a check now, then schedule the next; report events to <session-manager self()>`;
+  - first message: `/loop pr-monitor <mr-url> — monitor tick: you are the monitor helper; run a check now, then schedule the next; report events to <session-manager self()>; answer user questions on what from the code, forward why to the caller`;
   - one monitor per MR: if `status(mr-<iid>)` shows `mr-<iid>-monitor` live,
     reuse it and say so;
   - first run "Catch-up" below, so an MR that merged while nothing watched it
@@ -49,6 +49,11 @@ ready again. Fixing is `pr-takeover`'s job.
   - run Catch-up again on every event from a monitor and when you resume after
     a restart, and "Close-out" as soon as you learn an MR of yours merged or
     closed, from any source;
+  - a `mr-<iid> question from the user:` message is not an event: answer the
+    user from what you know of why the code changed (didn't write it: say so,
+    and point to the MR description or its author), and always send it back with
+    `$SM delegate` as `mr-<iid> answer: <text>`, so the user sees it in the
+    thread where they asked;
   - it is a child of the calling session and ends with it.
 - **When you are the monitor helper** (your first message says so): every
   `/loop` firing and every nudge is a check, never an echo to ignore: run the
@@ -60,7 +65,8 @@ ready again. Fixing is `pr-takeover`'s job.
   caller's address from your first message, the repo checkout, the MR URL); on t3, also call
   `watch_pull_request` with the MR URL, and
   `unwatch_pull_request` when you stop the loop. Runs are silent in your pane; send the caller (session-manager `report_command`) only
-  these events, one line each, prefixed `mr-<iid> event:`
+  these events, one line each, prefixed `mr-<iid> event:`, plus forwarded user
+  questions (below)
   - drafted (with the reasons), undrafted (`mr-<iid> event: undrafted
     (<why>)`), or stays Draft only for what doesn't draft (a Should fix, a
     flake), once per head and set of reason kinds (`stays_draft_sent: {sha,
@@ -97,6 +103,16 @@ ready again. Fixing is `pr-takeover`'s job.
   new head's review without waiting for its pipeline. A review report it names
   for that sha counts as the review; read it instead of starting a reviewer. The
   same goes for one named in your first message (`review of <sha>: <file>`).
+- **A question from the user in your thread:** answer "what" (what changed,
+  which commit, CI status) from the code, the MR and your reports. Send "why"
+  (intent, design) to the caller, who raised or took over the MR: `mr-<iid>
+  question from the user: <question> (<file>, <commit>, <diff stat>)` through
+  `report_command` (on t3 `t3 thread send <caller>`); tell the user it was
+  forwarded, and never guess the author's reasons. A `mr-<iid> answer:` from
+  the caller: show it to the user, forward nothing. Either way end the turn
+  with `ScheduleWakeup` (the /loop prompt, not the question), or the loop
+  ends. With `final_event_at` set the caller has let you go: don't forward;
+  tell the user to ask in the caller's thread (`watched_by.caller`), then settle.
 
 ## Ground rules
 

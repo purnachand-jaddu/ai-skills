@@ -26,7 +26,7 @@ restart_loop() {
   last=$(jq -r '.restarted_at // empty' "$f")
   [[ -n $last ]] && (( now - $(to_epoch "$last") < LOOP_STALE_SECONDS )) && return
   local result=sent
-  "$T3" thread send "$thread" "/loop pr-monitor $url — monitor tick: you are the monitor helper; run a check now, then schedule the next; report events to $caller" >/dev/null 2>&1 || result=failed
+  "$T3" thread send "$thread" "/loop pr-monitor $url — monitor tick: you are the monitor helper; run a check now, then schedule the next; report events to $caller; answer user questions on what from the code, forward why to the caller" >/dev/null 2>&1 || result=failed
   # Stamped on failure too, so a gone thread is retried once per LOOP_STALE_SECONDS, not every run.
   jq --arg at "$(date -u +%FT%TZ)" '.restarted_at = $at' "$f" > "$f.restart.tmp" && mv "$f.restart.tmp" "$f"
   jq -nc --arg w "${f:t:r}" --arg t "$thread" --arg r "$result" '{watch: $w, restart: $r, thread: $t}'
