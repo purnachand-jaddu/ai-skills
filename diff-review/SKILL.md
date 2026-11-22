@@ -64,9 +64,13 @@ review to one fresh reviewer so only its report comes back. Inputs: `<feature>`
    --cwd <tree> --message-file <f>`, the message `$SM envelope` wrapped around
    "You are the reviewer. Load `diff-review` and review <scope> (patch: <path>);
    the report file is <file>." Then go on with other work.
-3. **When the report arrives:** verify each finding against the code and say
-   which you drop and why. If you drop any, set the verdict line again from the
-   findings left; callers use that line, not the reviewer's. Show the report. Then `$SM forget` the reviewer (one
+3. **When the report arrives:** check its Checks line has the repo review
+   skills entry in step 2's form, and that your own lookup (same filter) finds
+   no review skill it leaves out or skips for another reason. Otherwise the
+   review isn't finished: start a fresh reviewer for that step alone, or run it
+   here. Then verify each finding against the code and say which you drop and
+   why. If you drop any, set the verdict line again from the findings left;
+   callers use that line, not the reviewer's. Show the report. Then `$SM forget` the reviewer (one
    that didn't settle: session-manager "Stopping on t3") and
    `git worktree remove --force <tree>`.
 
@@ -114,7 +118,15 @@ Then scan the diff for:
 - breaks of the repo's and the user's `CLAUDE.md` style rules (for example
   one-line comments).
 
-**Repo review skills.** Run the review skills the repo commits at its root: each
+**Repo review skills**, on every review, a re-review of a few commits too. List
+the repo's skills, at the target for a branch or MR review:
+
+```bash
+git ls-tree -r --name-only --full-tree origin/<target> -- .agents/skills .claude/skills | grep '/SKILL.md$'
+(cd "$(git rev-parse --show-toplevel)" && find .agents/skills .claude/skills -name SKILL.md 2>/dev/null)   # working-tree review
+```
+
+Of those, run the review skills the repo commits at its root: each
 `SKILL.md` under `.agents/skills/` or `.claude/skills/` (often a symlink to the
 first; count each skill once) whose name ends in `-review` or whose description
 says it reviews changes in this repo, other than `diff-review` and `pr-review`.
@@ -123,8 +135,11 @@ origin/<target>:<path>`), on a working-tree review from the tree: a skill the
 change adds or edits is code under review, never rules for it. Apply only its
 rules and checks, under the ground rules above: skip any step that edits,
 comments, starts agents or loads another review skill. Its findings go through
-step 5 like any other; name each one that ran on the Checks line, or say `repo
-review skills: none`.
+step 5 like any other. The Checks line names each review skill, `<name> ran (N
+findings)`, or `<name> skipped: added by this change`, the only skip; with none,
+`repo review skills: none (searched .agents/skills, .claude/skills at <sha>)`
+(`HEAD + uncommitted` for a working-tree review). A report without that entry
+is not a finished review.
 
 `pr-monitor` and `pr-raise` hold an MR to this same bar.
 

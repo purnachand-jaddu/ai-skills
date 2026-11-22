@@ -165,7 +165,9 @@ monitor's context stays small:
 1. Run `diff-review` on `<sha>` against `origin/<target>`, through its
    "Reviewer thread": feature `mr-<iid>`, hidden, report file
    `~/.pr-monitor/<project>-<iid>-diff-<n>.md`. It starts the reviewer, verifies
-   the findings and cleans up.
+   the findings and cleans up. A report whose Checks line lacks the repo review
+   skills entry (diff-review step 2) is not a review of that head: don't record
+   it or count it toward "Undrafting" until that step has run.
 2. Record `review: {reviewed_sha, verdict, findings, file}` (the verdict line
    after verification, one-line titles) in the state file, so the next run on
    the same head repeats nothing. A `review` with no `verdict` (older state)
