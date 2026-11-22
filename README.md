@@ -47,6 +47,8 @@ $EDITOR ~/.config/ticket-manager/config.toml   # base_url (with /api), workspace
 $EDITOR ~/.config/machines/config.toml         # your tailnet machines: login, role, what's installed
 ```
 
+`install.sh` also links `CODING_STANDARD.md` into `~/.claude` and `~/.codex` and adds one line that points to it: `@CODING_STANDARD.md` in `~/.claude/CLAUDE.md`, a read-this line in `~/.codex/AGENTS.md`. Edit the standard here, not the links.
+
 Third-party plugins, skills and CLI tools are listed in `setup/third-party.json`; `setup/install.sh` installs them (`--check` only reports, and lists skill folders nobody recorded). Ask the `setup` skill to add one.
 
 Optional: `pr-monitor/launchd/install-heartbeat.sh` restarts monitor loops that died and syncs tickets on merge, every 10 minutes (GitLab MRs, monitors on T3, macOS) (`--uninstall` removes it).
