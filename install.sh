@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Symlink every skill into ~/.claude/skills, seed the ticket-manager and machines configs, then run setup/install.sh (plugins, git skills, tools).
-# Safe to re-run. Never overwrites a real (non-symlink) directory or an existing config.
+# Symlink every skill into ~/.claude/skills, link CODING_STANDARD.md for Claude and Codex, seed the ticket-manager and machines configs, then run setup/install.sh.
+# Safe to re-run. Never overwrites a real (non-symlink) directory or an existing config; only appends one line to CLAUDE.md / AGENTS.md.
 set -euo pipefail
 AI="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
@@ -35,6 +35,18 @@ if [ ! -f "$M_CONFIG" ]; then
   cp "$AI/config/machines.toml.example" "$M_CONFIG"
   echo "created $M_CONFIG — list your machines"
 fi
+
+# Links CODING_STANDARD.md into an agent's config dir and adds its reference line to that agent's instructions file once.
+link_standard() {
+  local dir=$1 file=$2 line=$3 link="$1/CODING_STANDARD.md"
+  [ -d "$dir" ] || { echo "skip the coding standard for $dir: not installed; re-run after installing it"; return 0; }
+  if [ -e "$link" ] && [ ! -L "$link" ]; then echo "skip $link: exists and is not a symlink" >&2; return 0; fi
+  ln -sfn "$AI/CODING_STANDARD.md" "$link"
+  touch "$dir/$file"
+  grep -qxF "$line" "$dir/$file" || { printf '\n%s\n' "$line" >> "$dir/$file"; echo "added the coding standard to $dir/$file"; }
+}
+link_standard "$HOME/.claude" CLAUDE.md "@CODING_STANDARD.md"
+link_standard "$HOME/.codex" AGENTS.md "Follow the coding standard in ~/.codex/CODING_STANDARD.md; read it before you write code."
 
 # third-party plugins, skills and tools (setup/third-party.json)
 "$AI/setup/install.sh"

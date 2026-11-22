@@ -41,7 +41,7 @@ usually a link in `~/.claude/skills`.
 ## Set up a machine
 
 ```bash
-"$AI/install.sh"                # links this repo's skills, then runs setup/install.sh
+"$AI/install.sh"                # links this repo's skills and CODING_STANDARD.md, then runs setup/install.sh
 "$AI/setup/install.sh" --check  # report only
 ```
 
