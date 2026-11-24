@@ -44,21 +44,33 @@ for the person who meets it", answered with evidence someone else can check.
 The PR/MR as given (number, URL or branch); none given, the one for the
 current branch. Collect: head sha, target, the diff's paths, the description,
 and the linked ticket's acceptance criteria (ticket-manager) when there is one.
-Work in a detached worktree at the head sha, never the user's checkout.
+Work in a detached worktree at the head sha, never the user's checkout, inside
+the repo folder so session-manager can start helpers there: `git worktree add
+--detach <repo>/.worktrees/<feature>-verify-<n> <sha>`, with `/.worktrees/` in
+`$(git rev-parse --git-common-dir)/info/exclude`. In a bare clone, use the
+.worktrees/ of a checkout T3 knows as a project.
 `<feature>` is the caller's, else `verify-<number>`; `<n>` is the next free
 number under `~/.agent-sessions/<feature>/`.
 
 ## 2. The repo's verify skill
 
+A folder named exactly `verify` under `.agents/skills/` or `.claude/skills/`.
+Clear every copy the head has, then put the target's in their place:
+
 ```bash
-git ls-tree -r --name-only --full-tree origin/<target> -- .agents/skills .claude/skills | grep -E '(^|/|-)verify/SKILL\.md$'
-d=$(dirname <that path>); rm -rf "<worktree>/${d:?}"    # replace the head's copy, scripts included
-git archive origin/<target> "$d" | tar -x -C <worktree>
+pat='(^|/)verify/SKILL\.md$'
+for p in $(git ls-tree -r --name-only --full-tree <sha> -- .agents/skills .claude/skills | grep -E "$pat"); do
+  d=$(dirname "$p"); rm -rf "<worktree>/${d:?}"      # the head's copy, scripts included
+done
+for p in $(git ls-tree -r --name-only --full-tree origin/<target> -- .agents/skills .claude/skills | grep -E "$pat"); do
+  git archive origin/<target> "$(dirname "$p")" | tar -x -C <worktree>
+done
 ```
 
-The worktree now holds the target's whole skill folder, so the helpers that
-start there load the target's skill and run the target's scripts. When the PR
-changed that folder, the report says its changes were not used.
+A symlinked `.claude/skills` is listed as one link, not a second copy, so each
+skill is counted once. The helpers that start in the worktree now load only the
+target's skill and run only the target's scripts. When the PR changed or added
+a verify skill, the report says its version was not used.
 
 - **Found:** follow it for setup, drive and check; it overrides the defaults
   below wherever it speaks.
@@ -133,10 +145,11 @@ Write `~/.agent-sessions/<feature>/verify-<n>.md`, verdict first:
 |---|---|
 | **Verified** | every planned flow passed on its surface |
 | **Partly verified** | at least one flow passed; the rest are not verified, none failed or flaky |
-| **Not verified** | no flow could be driven |
+| **Not verified** | no flow passed, and none failed or was flaky |
 | **Not working** | any flow failed or was flaky |
 
-With no repo verify skill, the line ends `(weak evidence)`.
+Defects don't change the verdict; the line counts them: `Verified, 1 defect`.
+With no repo verify skill, it ends `(weak evidence)`.
 
 ```
 Partly verified (a1b2c3d): 3 of 4 flows pass; Windows install not verified (no Windows machine).
