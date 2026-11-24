@@ -124,7 +124,17 @@ Show it in one message and ask for a yes:
 
 ### Description
 
-Scannable, for a reviewer new to the work. Match the repo's recent MRs; default:
+Scannable, for a reviewer new to the work. A repo that commits a description
+skill decides the layout: a `SKILL.md` whose folder is named `pr-description` or
+ends in `-pr-description`, under `.agents/skills/` or `.claude/skills/` on
+`origin/<target>`:
+
+```bash
+git ls-tree -r --name-only origin/<target> -- .agents/skills .claude/skills | grep -E '(^|/|-)pr-description/SKILL\.md$'
+```
+
+Load it and follow it in place of the layout below, the ticket line included.
+Otherwise match the repo's recent MRs; default:
 
 ```markdown
 Fixes ABC-123: <url>      <- or "Refs ABC-123: <url>", omitted with no ticket
