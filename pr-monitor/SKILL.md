@@ -286,6 +286,12 @@ Not counted: 1 nit (naming), coverage not reported by this pipeline
 Ticket https://kaneo.example/acme/task/ACME-154: in-review → in-progress (commented)
 ```
 
+When the state file has a `verify` entry (from `pr-verifier`), add one line:
+`Verify: <verdict> (<verified_sha>)`, with `, stale: head moved` when
+`verified_sha` isn't the head. It is shown, never acted on: it doesn't draft,
+undraft or count as a valid issue, and the monitor never runs pr-verifier
+itself.
+
 ## Merging in the target
 
 The one push a run makes on its own, by the monitor helper or a one-off check.

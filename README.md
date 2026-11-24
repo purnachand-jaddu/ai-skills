@@ -14,6 +14,7 @@ flowchart TD
     pair[pair-programming]
     monitor[pr-monitor]
     prreview[pr-review]
+    verifier[pr-verifier]
     setup[setup]
   end
   subgraph services["Shared services"]
@@ -34,6 +35,8 @@ flowchart TD
   pair -->|reviewer| review
   prreview -->|delegates| review
   pair -->|helpers| sessions
+  verifier -->|verifier, checker| sessions
+  verifier -->|acceptance criteria| tickets
   setup -->|list changes| raise
 ```
 

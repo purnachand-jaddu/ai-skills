@@ -1,0 +1,1 @@
+2026-11-24: new skill. Verifies a PR by running it on its surface in three stages (setup, drive, check), with a fresh checker on the evidence, following the repo's verify skill from the target branch; drawn from the user's e2e habits and the Claude Code team's verification post (claude.dev, 2026-11-16)
