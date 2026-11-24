@@ -33,8 +33,9 @@ for the person who meets it", answered with evidence someone else can check.
 - **Isolated and disposable.** Every run gets its own stack (the repo skill
   says how), never the user's dev stack, and leaves nothing running that it
   started unless the user asked to keep it.
-- **Read-only towards the PR.** No edits, commits or pushes. Posting the
-  evidence, comments and Draft changes need the user's yes.
+- **Read-only towards the PR.** No edits, commits or pushes, and never a
+  Draft change: that stays pr-monitor's. Posting the evidence or a comment
+  needs the user's yes.
 - **No retry until green**, no added sleeps. A flaky step is reported as
   flaky with what was seen each time.
 
@@ -44,13 +45,20 @@ The PR/MR as given (number, URL or branch); none given, the one for the
 current branch. Collect: head sha, target, the diff's paths, the description,
 and the linked ticket's acceptance criteria (ticket-manager) when there is one.
 Work in a detached worktree at the head sha, never the user's checkout.
+`<feature>` is the caller's, else `verify-<number>`; `<n>` is the next free
+number under `~/.agent-sessions/<feature>/`.
 
 ## 2. The repo's verify skill
 
 ```bash
-git ls-tree -r --name-only origin/<target> -- .agents/skills .claude/skills | grep -E '(^|/|-)verify/SKILL\.md$'
-git show origin/<target>:<that path>      # read it from the target, with its references/
+git ls-tree -r --name-only --full-tree origin/<target> -- .agents/skills .claude/skills | grep -E '(^|/|-)verify/SKILL\.md$'
+d=$(dirname <that path>); rm -rf "<worktree>/${d:?}"    # replace the head's copy, scripts included
+git archive origin/<target> "$d" | tar -x -C <worktree>
 ```
+
+The worktree now holds the target's whole skill folder, so the helpers that
+start there load the target's skill and run the target's scripts. When the PR
+changed that folder, the report says its changes were not used.
 
 - **Found:** follow it for setup, drive and check; it overrides the defaults
   below wherever it speaks.
@@ -67,7 +75,10 @@ git show origin/<target>:<that path>      # read it from the target, with its re
 2. **Checklist:** add the repo skill's checklist items whose trigger matches
    the diff (most runs match a few, not all).
 3. **Surface and environment** per flow, from the repo skill's surface map.
-4. Show the plan as a table (flow, surface, environment, how it's driven) in
+4. **No flow at all** (no criteria, no claims, no checklist match): stop and
+   ask the user what the change should do; never report a run with nothing
+   in it.
+5. Show the plan as a table (flow, surface, environment, how it's driven) in
    one message, then go on; ask first only when a flow needs something
    outward-facing (a shared environment, a real account, money).
 
@@ -104,17 +115,28 @@ and the evidence folder, not the verifier's account of it. For each flow:
   button that does nothing, a layout broken at narrow width, a slow step.
 
 It writes `pass`, `fail`, `not verified` (and why) or `flaky` per flow, plus
-the defects with the screenshot that shows each.
+the defects with the screenshot that shows each. A flow on the repo skill's
+known-failures list that fails as listed is `not verified (known: <ticket>)`,
+not `fail`.
 
-## 6. Report
+## 6. Clean up
+
+Unless the user asked to keep it: the verifier runs the repo skill's stop
+step, then `$SM forget` both helpers (session-manager, "Stopping on t3"), and
+`git worktree remove --force <worktree>`. The evidence folder stays.
+
+## 7. Report
 
 Write `~/.agent-sessions/<feature>/verify-<n>.md`, verdict first:
 
 | Verdict | When |
 |---|---|
 | **Verified** | every planned flow passed on its surface |
-| **Partly verified** | some flows passed; the rest are not verified, none failed |
-| **Not working** | any flow failed |
+| **Partly verified** | at least one flow passed; the rest are not verified, none failed or flaky |
+| **Not verified** | no flow could be driven |
+| **Not working** | any flow failed or was flaky |
+
+With no repo verify skill, the line ends `(weak evidence)`.
 
 ```
 Partly verified (a1b2c3d): 3 of 4 flows pass; Windows install not verified (no Windows machine).
@@ -126,13 +148,15 @@ Defects: 1 (the Cancel button leaves the dialog open: cancel/after.png)
 Not verified: Windows install: no guest driver
 ```
 
-Record it for pr-monitor in the PR's state file (`~/.pr-monitor/<project>-<iid>.json`
-or `<repo>-<n>.json`): `verify: {verified_sha, verdict, file}`, merged with
-`jq '. + {...}'`. Show the user the report. Posting it (in the PR
+Record it for pr-monitor in the PR's state file, named as pr-monitor names it
+(`$PR_MONITOR_DIR`, default `~/.pr-monitor/`): `<project id>-<iid>.json` on
+GitLab, as `mr-snapshot.sh` does, or `<repo>-<n>.json` on GitHub. Merge
+`verify: {verified_sha, verdict, file}` into it, starting from `{}` when the
+file doesn't exist, through a temp file and `mv`. Show the user the report. Posting it (in the PR
 description's verification section, the repo's description skill decides
 where, or as a comment) needs their yes.
 
-## 7. Lock it in
+## 8. Lock it in
 
 For each flow verified by hand that the repo's suite doesn't cover, offer to
 add it as a repeatable case in the form the repo skill names, so the next PR
