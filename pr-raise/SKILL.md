@@ -64,7 +64,8 @@ name: confirm, don't ask: "Linking <url>, right?" Otherwise, before writing
 anything, ask: "Is there a linked ticket? Paste its URL or ID, or say none."
 Then load `ticket-manager` and run its **Link** step: it resolves the ID, or
 searches and offers to create one. Pre-authorised: skip the ask and run Link,
-which picks or creates the ticket itself; a ticket the user named still wins.
+which picks or creates the ticket itself; a ticket the user named, or a "none"
+they gave, still wins.
 
 - With a ticket: the description carries `Fixes <ID>: <url>` or
   `Refs <ID>: <url>`, the full link from ticket-manager: its first line by
@@ -104,7 +105,8 @@ plus the uncommitted part, without the files step 1 leaves out) through its
 "Reviewer thread", feature `<ticket-id>` or the branch slug. Wait for its
 report before step 4. Its verdict decides: **Do not merge** counts as a failed
 check (Draft); the findings of **Merge after fixes** and **Mergeable** go in the
-plan for the user to decide, with the verdict first.
+plan for the user to decide, with the verdict first; pre-authorised, the MR
+opens ready and those findings go in the step 7 report.
 
 ## 4. Propose the plan
 

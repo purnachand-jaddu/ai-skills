@@ -74,7 +74,7 @@ Before the first edit of a task that will end in an MR, ask once for the ticket:
 its link or ID, find or create one, or none. With a ticket, run **Link**, then
 `$TM start <KEY> --branch <branch>`, remember the key for the session, and put it
 in any new branch's name, so `pr-raise` finds it. Pre-authorised: skip the ask
-and run Link. "None" is final for the session:
+and run Link, unless the user already named a ticket or said none. "None" is final for the session:
 don't ask again until `pr-raise`, which asks once more.
 
 ## 1. Link (at Start, or by pr-raise before the MR exists)
@@ -82,17 +82,18 @@ don't ask again until `pr-raise`, which asks once more.
 1. **The user gave an ID or URL:** `$TM get` it; show title, status and link so
    the user can confirm it's the right one.
 2. **None given:** `$TM search` with keywords from the branch name, the commit
-   subjects and the changed module. Offer up to 3 matches, each with its link,
+   subjects and the changed module (at Start, from the user's request). Offer up to 3 matches, each with its link,
    plus "create a new one" and "no ticket". Pre-authorised: take a match only
    when it plainly describes this change, otherwise create.
 3. **Create (on a yes, or pre-authorised):** ask which project (offer the one
    matching the module, from `[module_projects]` in the config; ids from
    `$TM projects`); pre-authorised, take that match, and ask only when none
-   matches. Title from the MR title, description from the MR's Why section.
+   matches. Title from the MR title, description from the MR's Why section; at Start,
+   both from the user's request and its goal.
 
 Return the key, the link and whether the MR **fixes** it or only **refs** it
 (ask when unclear: one ticket split over several MRs is `Refs`; pre-authorised,
-`Fixes` unless another MR already links the ticket). pr-raise writes
+`Fixes` unless `$TM history <KEY>` shows another MR's sync comment). pr-raise writes
 `Fixes <KEY>: <url>` or `Refs <KEY>: <url>` into the description from it (the
 first line by default; where the repo's description skill puts it otherwise)
 
