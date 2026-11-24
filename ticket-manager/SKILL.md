@@ -88,7 +88,8 @@ don't ask again until `pr-raise`, which asks once more.
 
 Return the key, the link and whether the MR **fixes** it or only **refs** it
 (ask when unclear: one ticket split over several MRs is `Refs`). pr-raise writes
-the first description line from it: `Fixes <KEY>: <url>` or `Refs <KEY>: <url>`
+`Fixes <KEY>: <url>` or `Refs <KEY>: <url>` into the description from it (the
+first line by default; where the repo's description skill puts it otherwise)
 
 ## 2. Sync (by pr-monitor on every run)
 

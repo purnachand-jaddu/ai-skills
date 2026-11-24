@@ -130,10 +130,13 @@ ends in `-pr-description`, under `.agents/skills/` or `.claude/skills/` on
 `origin/<target>`:
 
 ```bash
-git ls-tree -r --name-only origin/<target> -- .agents/skills .claude/skills | grep -E '(^|/|-)pr-description/SKILL\.md$'
+git ls-tree -r --name-only --full-tree origin/<target> -- .agents/skills .claude/skills | grep -E '(^|/|-)pr-description/SKILL\.md$'
 ```
 
-Load it and follow it in place of the layout below, the ticket line included.
+Read that copy (`git show origin/<target>:<path>`, not the branch's, which this
+MR may be editing) and follow it in place of the layout below, the ticket line
+included. On a Draft raised for failing checks, still add the Pre-flight issues
+list, under its Notes when the layout has no place for it.
 Otherwise match the repo's recent MRs; default:
 
 ```markdown
