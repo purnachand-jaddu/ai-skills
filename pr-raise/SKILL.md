@@ -28,7 +28,8 @@ checked, committed in phases, pushed to a branch, described well. Watching it is
   any repo-changing command. In a bare clone with one worktree per branch, a new
   branch can mean `git worktree add`, not `git switch`.
 - **One yes covers commit + push + create**, only after the step 4 plan. Ask
-  before anything else outward-facing.
+  before anything else outward-facing. When the user's instructions
+  pre-authorise opening MRs, that stands in for the yes; the plan is still shown.
 - **Stage explicit paths**, never `git add .`, `-A` or a directory: the tree
   holds untracked WIP.
 - **No AI attribution** in commits, title or description (`Co-Authored-By:
@@ -62,7 +63,8 @@ Ticket linked this session (ticket-manager's **Start**) or ID in the branch
 name: confirm, don't ask: "Linking <url>, right?" Otherwise, before writing
 anything, ask: "Is there a linked ticket? Paste its URL or ID, or say none."
 Then load `ticket-manager` and run its **Link** step: it resolves the ID, or
-searches and offers to create one.
+searches and offers to create one. Pre-authorised: skip the ask and run Link,
+which picks or creates the ticket itself; a ticket the user named still wins.
 
 - With a ticket: the description carries `Fixes <ID>: <url>` or
   `Refs <ID>: <url>`, the full link from ticket-manager: its first line by
@@ -72,6 +74,7 @@ searches and offers to create one.
 
 In the same prompt (AskUserQuestion), ask for reviewers if recent MRs set them
 (`glab mr list --merged -F json`), offering the usual ones; none is fine.
+Pre-authorised: no reviewers unless the user named them, and no prompt.
 
 ## 3. Pre-flight checks
 
@@ -105,7 +108,7 @@ plan for the user to decide, with the verdict first.
 
 ## 4. Propose the plan
 
-Show it in one message and ask for a yes:
+Show it in one message and ask for a yes (pre-authorised: show it and go on):
 
 - **Branch:** the current feature branch, or a new one off `origin/<target>`
   named `<type>/<ticket-or-slug>` (`fix/`, `feat/`, `chore/`).
@@ -166,7 +169,7 @@ A mermaid diagram or code excerpt only when it beats prose. No emoji headers, no
 
 ## 5. Commit, push, open
 
-On the user's yes:
+On the user's yes, or at once when pre-authorised:
 
 ```bash
 git add <explicit paths>; git commit -m "<subject>" -m "<body>"   # per phase
