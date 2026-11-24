@@ -56,7 +56,7 @@ status sync, and say sync isn't supported for it.
 | Search | `$TM search "csv export timeout" --limit 3` |
 | Projects to create in | `$TM projects` |
 | A project's columns | `$TM columns <project_id>` |
-| Create (after a yes) | `$TM create --project <id> --title "…" --description-file <file>` (`-` reads stdin) |
+| Create (after a yes, or pre-authorised) | `$TM create --project <id> --title "…" --description-file <file>` (`-` reads stdin) |
 | Every ticket in a project | `$TM list <project_id> [--status <slug>]` (all pages) |
 | A ticket's history | `$TM history <KEY>`: comments and activity, oldest first |
 | A ticket's links | `$TM relations <KEY>` |
@@ -84,7 +84,7 @@ don't ask again until `pr-raise`, which asks once more.
 2. **None given:** `$TM search` with keywords from the branch name, the commit
    subjects and the changed module (at Start, from the user's request). Offer up to 3 matches, each with its link,
    plus "create a new one" and "no ticket". Pre-authorised: take a match only
-   when it plainly describes this change, otherwise create.
+   when it plainly describes this change and isn't done, otherwise create.
 3. **Create (on a yes, or pre-authorised):** ask which project (offer the one
    matching the module, from `[module_projects]` in the config; ids from
    `$TM projects`); pre-authorised, take that match (at Start, the module the
