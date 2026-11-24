@@ -64,8 +64,9 @@ anything, ask: "Is there a linked ticket? Paste its URL or ID, or say none."
 Then load `ticket-manager` and run its **Link** step: it resolves the ID, or
 searches and offers to create one.
 
-- With a ticket: description's first line is `Fixes <ID>: <url>` or
-  `Refs <ID>: <url>`, the full link from ticket-manager. Branch name carries the
+- With a ticket: the description carries `Fixes <ID>: <url>` or
+  `Refs <ID>: <url>`, the full link from ticket-manager: its first line by
+  default, or where the repo's description skill puts it (Description). Branch name carries the
   ID (`fix/<id-lowercased>-<short-slug>`).
 - With none: no ticket line, no placeholder.
 
