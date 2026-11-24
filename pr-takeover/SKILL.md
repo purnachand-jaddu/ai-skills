@@ -22,7 +22,7 @@ The hard part is not losing a comment, not "fixing" a reviewer's mistaken claim,
 ## 0. Ground rules
 
 - **Never merge, never push to the base/default branch, never force-push a branch you didn't create** unless the user explicitly says so for this PR. The human merges.
-- **Outward-facing actions need a yes.** Pushing to the PR branch is the job. Replies, resolving threads, PR description edits, reviewers and labels go to the user as drafts first unless they already said "post them" / "resolve them".
+- **Outward-facing actions need a yes.** Pushing to the PR branch is the job. Replies, resolving threads, PR description edits, reviewers and labels go to the user as drafts first unless they already said "post them" / "resolve them", or their instructions pre-authorise posting replies or editing the description.
 - **Repo instructions win.** Read `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, PR templates and lint/format configs before touching code; match the repo's commit style, comment density and test idioms.
 - **Reviewers can be wrong, and so can you.** Every comment is a claim to verify against the code, not an order.
 
@@ -125,7 +125,7 @@ For each thread, draft a short reply:
 
 Draft a PR description update too if scope or behaviour changed (new limits, removed claims, follow-ups), in the repo's description skill's layout when it has one (pr-raise, Description).
 
-Save the drafts in the workspace and show them to the user. Post them, and resolve the threads you fixed, only once the user says to. Leave declined and needs-human threads unresolved for the reviewer.
+Save the drafts in the workspace and show them to the user. Post them, and resolve the threads you fixed, only once the user says to; when posting replies is pre-authorised, post the replies once the fix is pushed, and the description update too when editing it is pre-authorised; still ask before resolving. Leave declined and needs-human threads unresolved for the reviewer.
 
 ## 10. Report
 
