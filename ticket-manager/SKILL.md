@@ -93,7 +93,8 @@ don't ask again until `pr-raise`, which asks once more.
 
 Return the key, the link and whether the MR **fixes** it or only **refs** it
 (ask when unclear: one ticket split over several MRs is `Refs`; pre-authorised,
-`Fixes` unless `$TM history <KEY>` shows another MR's sync comment). pr-raise writes
+`Fixes` unless `$TM history <KEY>` shows another MR still open or merged;
+a closed, unmerged one doesn't count). pr-raise writes
 `Fixes <KEY>: <url>` or `Refs <KEY>: <url>` into the description from it (the
 first line by default; where the repo's description skill puts it otherwise)
 
