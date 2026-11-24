@@ -39,7 +39,8 @@ status sync, and say sync isn't supported for it.
 ## Ground rules
 
 - Status moves and comments are **automatic** and always reported; no yes needed.
-- **Creating** a ticket needs the user's yes.
+- **Creating** a ticket needs the user's yes, unless the user's instructions
+  pre-authorise it: then search first and create only when no match plainly describes the change.
 - **Always give the ticket's full link** (`url` from `tm`), never its key or
   title alone: when confirming, offering matches, creating, reporting, and in
   the MR description. A key can't be clicked, and it isn't unique across trackers.
@@ -55,7 +56,7 @@ status sync, and say sync isn't supported for it.
 | Search | `$TM search "csv export timeout" --limit 3` |
 | Projects to create in | `$TM projects` |
 | A project's columns | `$TM columns <project_id>` |
-| Create (after a yes) | `$TM create --project <id> --title "…" --description-file <file>` (`-` reads stdin) |
+| Create (after a yes, or pre-authorised) | `$TM create --project <id> --title "…" --description-file <file>` (`-` reads stdin) |
 | Every ticket in a project | `$TM list <project_id> [--status <slug>]` (all pages) |
 | A ticket's history | `$TM history <KEY>`: comments and activity, oldest first |
 | A ticket's links | `$TM relations <KEY>` |
@@ -72,7 +73,8 @@ status sync, and say sync isn't supported for it.
 Before the first edit of a task that will end in an MR, ask once for the ticket:
 its link or ID, find or create one, or none. With a ticket, run **Link**, then
 `$TM start <KEY> --branch <branch>`, remember the key for the session, and put it
-in any new branch's name, so `pr-raise` finds it. "None" is final for the session:
+in any new branch's name, so `pr-raise` finds it. Pre-authorised: skip the ask
+and run Link, unless the user already named a ticket or said none. "None" is final for the session:
 don't ask again until `pr-raise`, which asks once more.
 
 ## 1. Link (at Start, or by pr-raise before the MR exists)
@@ -80,14 +82,19 @@ don't ask again until `pr-raise`, which asks once more.
 1. **The user gave an ID or URL:** `$TM get` it; show title, status and link so
    the user can confirm it's the right one.
 2. **None given:** `$TM search` with keywords from the branch name, the commit
-   subjects and the changed module. Offer up to 3 matches, each with its link,
-   plus "create a new one" and "no ticket".
-3. **Create (on a yes):** ask which project (offer the one matching the module, from
-   `[module_projects]` in the config; ids from `$TM projects`), title from the MR title, description from the MR's Why
-   section.
+   subjects and the changed module (at Start, from the user's request). Offer up to 3 matches, each with its link,
+   plus "create a new one" and "no ticket". Pre-authorised: take a match only
+   when it plainly describes this change and isn't done, otherwise create.
+3. **Create (on a yes, or pre-authorised):** ask which project (offer the one
+   matching the module, from `[module_projects]` in the config; ids from
+   `$TM projects`); pre-authorised, take that match (at Start, the module the
+   request names), and ask only when none matches. Title from the MR title, description from the MR's Why section; at Start,
+   both from the user's request and its goal.
 
 Return the key, the link and whether the MR **fixes** it or only **refs** it
-(ask when unclear: one ticket split over several MRs is `Refs`). pr-raise writes
+(ask when unclear: one ticket split over several MRs is `Refs`; pre-authorised,
+`Fixes` unless `$TM history <KEY>` shows another MR still open or merged;
+a closed, unmerged one doesn't count). pr-raise writes
 `Fixes <KEY>: <url>` or `Refs <KEY>: <url>` into the description from it (the
 first line by default; where the repo's description skill puts it otherwise)
 

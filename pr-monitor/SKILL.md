@@ -121,7 +121,9 @@ ready again. Fixing is `pr-takeover`'s job.
   issue, "Undrafting", ticket-manager's status moves and comments, and that
   retarget are pre-authorised. Everything
   else outward-facing needs a yes: comments, replying to or resolving threads,
-  retrying jobs, editing the description, labels, reviewers.
+  retrying jobs, editing the description, labels, reviewers. When the user's
+  instructions pre-authorise a retry, retry a failed job once per head
+  (step 2, CI pipeline row).
 - **Never** merge or approve, or push except a requested
   sync ("Syncing with main") or a merge commit of the target
   ("Merging in the target"). Never push to `main` or the target branch.
@@ -164,7 +166,7 @@ gh api graphql -f query='...reviewThreads{nodes{isResolved comments{nodes{body p
 | Signal | Where | Counts as a valid issue when |
 |---|---|---|
 | **Review comments** | unresolved threads, new notes | Read the code at that path/line on the current head. Valid if true and unaddressed: a bug, a security or data-loss risk, a broken contract, a missing test the reviewer asked for, a request the author agreed to. Not valid: a nit the repo's rules don't back, an answered question, a comment on changed code, or a wrong claim (say why). |
-| **CI pipeline** | `pipeline.status`, `failed_jobs` | A failed job with `allow_failure: false` on the head sha; read the log tail (`glab ci trace <job-id>` / `gh run view --log-failed`). A flake (network, runner, timeout with no code cause) is reported, not drafted; retry only with a yes. An old sha's pipeline doesn't count; wait for the current one. |
+| **CI pipeline** | `pipeline.status`, `failed_jobs` | A failed job with `allow_failure: false` on the head sha; read the log tail (`glab ci trace <job-id>` / `gh run view --log-failed`). A flake (network, runner, timeout with no code cause) is reported, not drafted; retry only with a yes, or when pre-authorised and the state file's `retried` (`{<job name>: <sha>}`) has no entry for that job on this head; retry only that job (`glab ci retry <job-id>`, `gh run rerun --job <job-id>`, never `--failed`) and record it; a second failure of that job on the same head is a valid issue (Draft), not retried. An old sha's pipeline doesn't count; wait for the current one. |
 | **Unit tests** | `pipeline.tests` (GitLab test report), job logs | Any failed or errored test on the head sha. Name the tests. |
 | **Coverage** | `pipeline.coverage` vs `pipeline.target_coverage` | Drop of more than 0.5 percentage points against the target, or below a floor the repo declares (Makefile, CI config, `CLAUDE.md`). None reported is not an issue; say it isn't measured. |
 | **Merge conflicts** | `mr.has_conflicts`, `merge_status` | Conflicts with the target branch. |
