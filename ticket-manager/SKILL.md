@@ -40,7 +40,7 @@ status sync, and say sync isn't supported for it.
 
 - Status moves and comments are **automatic** and always reported; no yes needed.
 - **Creating** a ticket needs the user's yes, unless the user's instructions
-  pre-authorise it: then search first and create only when nothing matches.
+  pre-authorise it: then search first and create only when no match plainly describes the change.
 - **Always give the ticket's full link** (`url` from `tm`), never its key or
   title alone: when confirming, offering matches, creating, reporting, and in
   the MR description. A key can't be clicked, and it isn't unique across trackers.
@@ -87,8 +87,8 @@ don't ask again until `pr-raise`, which asks once more.
    when it plainly describes this change, otherwise create.
 3. **Create (on a yes, or pre-authorised):** ask which project (offer the one
    matching the module, from `[module_projects]` in the config; ids from
-   `$TM projects`); pre-authorised, take that match, and ask only when none
-   matches. Title from the MR title, description from the MR's Why section; at Start,
+   `$TM projects`); pre-authorised, take that match (at Start, the module the
+   request names), and ask only when none matches. Title from the MR title, description from the MR's Why section; at Start,
    both from the user's request and its goal.
 
 Return the key, the link and whether the MR **fixes** it or only **refs** it

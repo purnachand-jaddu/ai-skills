@@ -123,7 +123,7 @@ ready again. Fixing is `pr-takeover`'s job.
   else outward-facing needs a yes: comments, replying to or resolving threads,
   retrying jobs, editing the description, labels, reviewers. When the user's
   instructions pre-authorise a retry, retry a failed job once per head
-  ("Signals", CI pipeline).
+  (step 2, CI pipeline row).
 - **Never** merge or approve, or push except a requested
   sync ("Syncing with main") or a merge commit of the target
   ("Merging in the target"). Never push to `main` or the target branch.
