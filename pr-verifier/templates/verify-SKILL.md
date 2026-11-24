@@ -1,5 +1,5 @@
 ---
-name: verify
+name: <repo>-verify
 description: >-
   How to verify a change in <repo> end to end: start an isolated stack, drive
   each flow on the surface a user meets it on, and check the evidence. Used by
