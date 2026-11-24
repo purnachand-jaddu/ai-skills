@@ -6,7 +6,7 @@ description: >-
   trusting unit tests, in three stages: setup (start the stack and get the data
   into the right state), drive (use each flow on its real surface) and check (a
   fresh checker reads only the evidence and looks for cheating and defects).
-  Follows the repo's own verify skill (`verify` or `<repo>-verify`, such as
+  Follows the repo's own verify skill (`verify` or `<prefix>-verify`, such as
   `surface-verify`), read from the target branch, and
   offers to draft one when the repo has none. Reports one verdict per head
   with per-flow screenshots and logs, and offers to lock each hand-verified
@@ -75,7 +75,9 @@ target's skill and run only the target's scripts. When the PR changed or added
 a verify skill, the report says its version was not used.
 
 - **Found one:** follow it for setup, drive and check; it overrides the
-  defaults below wherever it speaks.
+  defaults below wherever it speaks. A prefixed one (`email-verify`) counts
+  only when its description says it verifies changes to this repo end to end;
+  otherwise ask the user, as with several.
 - **Found several** (say `surface-verify` and `pre-verify`): ask the user which
   is the repo's verify skill, and name the others in the report.
 - **None:** say so in one line, and offer to draft one from
