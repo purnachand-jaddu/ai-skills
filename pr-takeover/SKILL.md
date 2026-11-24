@@ -123,7 +123,7 @@ For each thread, draft a short reply:
 - **declined**: the reasoning, polite and specific;
 - **needs human**: the question now with the owner.
 
-Draft a PR description update too if scope or behaviour changed (new limits, removed claims, follow-ups).
+Draft a PR description update too if scope or behaviour changed (new limits, removed claims, follow-ups), in the repo's description skill's layout when it has one (pr-raise, Description).
 
 Save the drafts in the workspace and show them to the user. Post them, and resolve the threads you fixed, only once the user says to. Leave declined and needs-human threads unresolved for the reviewer.
 

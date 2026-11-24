@@ -64,8 +64,9 @@ anything, ask: "Is there a linked ticket? Paste its URL or ID, or say none."
 Then load `ticket-manager` and run its **Link** step: it resolves the ID, or
 searches and offers to create one.
 
-- With a ticket: description's first line is `Fixes <ID>: <url>` or
-  `Refs <ID>: <url>`, the full link from ticket-manager. Branch name carries the
+- With a ticket: the description carries `Fixes <ID>: <url>` or
+  `Refs <ID>: <url>`, the full link from ticket-manager: its first line by
+  default, or where the repo's description skill puts it (Description). Branch name carries the
   ID (`fix/<id-lowercased>-<short-slug>`).
 - With none: no ticket line, no placeholder.
 
@@ -124,7 +125,20 @@ Show it in one message and ask for a yes:
 
 ### Description
 
-Scannable, for a reviewer new to the work. Match the repo's recent MRs; default:
+Scannable, for a reviewer new to the work. A repo that commits a description
+skill decides the layout: a `SKILL.md` whose folder is named `pr-description` or
+ends in `-pr-description`, under `.agents/skills/` or `.claude/skills/` on
+`origin/<target>`:
+
+```bash
+git ls-tree -r --name-only --full-tree origin/<target> -- .agents/skills .claude/skills | grep -E '(^|/|-)pr-description/SKILL\.md$'
+```
+
+Read that copy (`git show origin/<target>:<path>`, not the branch's, which this
+MR may be editing) and follow it in place of the layout below, the ticket line
+included. On a Draft raised for failing checks, still add the Pre-flight issues
+list, under its Notes when the layout has no place for it.
+Otherwise match the repo's recent MRs; default:
 
 ```markdown
 Fixes ABC-123: <url>      <- or "Refs ABC-123: <url>", omitted with no ticket
