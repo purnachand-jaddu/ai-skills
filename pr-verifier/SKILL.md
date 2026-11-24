@@ -6,7 +6,8 @@ description: >-
   trusting unit tests, in three stages: setup (start the stack and get the data
   into the right state), drive (use each flow on its real surface) and check (a
   fresh checker reads only the evidence and looks for cheating and defects).
-  Follows the repo's own `verify` skill, read from the target branch, and
+  Follows the repo's own verify skill (`verify` or `<prefix>-verify`, such as
+  `surface-verify`), read from the target branch, and
   offers to draft one when the repo has none. Reports one verdict per head
   with per-flow screenshots and logs, and offers to lock each hand-verified
   flow in as a repeatable case. Use when the user says "verify this PR",
@@ -54,11 +55,12 @@ number under `~/.agent-sessions/<feature>/`.
 
 ## 2. The repo's verify skill
 
-A folder named exactly `verify` under `.agents/skills/` or `.claude/skills/`.
-Clear every copy the head has, then put the target's in their place:
+A folder named `verify` or `<one-word prefix>-verify` (radius: `surface-verify`)
+under `.agents/skills/` or `.claude/skills/`. Clear every copy the head has,
+then put the target's in their place:
 
 ```bash
-pat='(^|/)verify/SKILL\.md$'
+pat='(^|/)([a-z0-9]+-)?verify/SKILL\.md$'
 for p in $(git ls-tree -r --name-only --full-tree <sha> -- .agents/skills .claude/skills | grep -E "$pat"); do
   d=$(dirname "$p"); rm -rf "<worktree>/${d:?}"      # the head's copy, scripts included
 done
@@ -72,8 +74,12 @@ skill is counted once. The helpers that start in the worktree now load only the
 target's skill and run only the target's scripts. When the PR changed or added
 a verify skill, the report says its version was not used.
 
-- **Found:** follow it for setup, drive and check; it overrides the defaults
-  below wherever it speaks.
+- **Found one:** follow it for setup, drive and check; it overrides the
+  defaults below wherever it speaks. A prefixed one (`email-verify`) counts
+  only when its description says it verifies changes to this repo end to end;
+  otherwise ask the user, as with several.
+- **Found several** (say `surface-verify` and `pre-verify`): ask the user which
+  is the repo's verify skill, and name the others in the report.
 - **None:** say so in one line, and offer to draft one from
   `templates/verify-SKILL.md` for the user to commit. Without it, run the
   defaults below and label the verdict **weak evidence**: the steps were

@@ -1,5 +1,5 @@
 ---
-name: verify
+name: <prefix>-verify
 description: >-
   How to verify a change in <repo> end to end: start an isolated stack, drive
   each flow on the surface a user meets it on, and check the evidence. Used by
@@ -9,6 +9,9 @@ description: >-
 ---
 
 # Verify <repo>
+
+Commit this as `.agents/skills/verify/SKILL.md`, or `.agents/skills/<prefix>-verify/SKILL.md`
+with a one-word prefix (`surface-verify`); pr-verifier finds it by its folder name.
 
 ## Surfaces
 
