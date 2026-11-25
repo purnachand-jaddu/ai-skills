@@ -1,3 +1,4 @@
+2026-11-25: a head pipeline skipped by `[skip ci]` counts as passed for undrafting when the forge lets a skipped pipeline merge. pr-raise now tags prose-only MRs, and their Drafts would never have undrafted
 2026-11-24: actions the user's instructions pre-authorise stand in for a yes: one retry of a failed job per head, recorded in the state file's `retried`. job retries were approved every time they were asked in the T3 threads
 2026-11-24: shows pr-verifier's verdict for the head (stale when the head moved) in its report, without acting on it
 2026-11-21: mr-snapshot.sh bounds every glab call at 20 s with one retry and exits with {"error": ...} when the MR view or the discussions call still fails, instead of reporting zero threads; output goes through print -r so zsh echo no longer turns \n inside note bodies into invalid JSON. A stalled discussions call made !994's monitor report 0 unresolved threads when 4 were open
