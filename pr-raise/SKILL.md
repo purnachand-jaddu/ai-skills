@@ -155,8 +155,9 @@ the pushed head commit's message, only when all three hold:
     nothing runs, so no tag.
 - **The tag stays off the target.** A merge that copies the branch's commits or
   their bodies onto the target skips the target's pipeline too.
-  - GitLab: `merge_method` is `merge` or `rebase_merge`, and the squash commit
-    template (`squash_commit_template`) has no `%{all_commits}`.
+  - GitLab: `merge_method` is `merge` or `rebase_merge`, and neither
+    `merge_commit_template` nor `squash_commit_template` uses `%{all_commits}`,
+    `%{first_commit}` or `%{first_multiline_commit…}`.
   - GitHub (`gh api repos/<o>/<r>`): rebase merging is off
     (`allow_rebase_merge`), and squash is off or its `squash_merge_commit_message`
     isn't `COMMIT_MESSAGES`.
