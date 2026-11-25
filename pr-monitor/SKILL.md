@@ -247,7 +247,9 @@ once:
     resolved;
   - the latest `diff-review` is of this head (`review.reviewed_sha`) and its
     verdict is **Mergeable**;
-  - the head pipeline passed, or the repo has no CI; none is running;
+  - the head pipeline passed, or the repo has no CI, or `[skip ci]` in the
+    head's message skipped it and the MR's whole diff still meets pr-raise's
+    Skip CI rules; none is running;
   - no conflicts, no unresolved valid thread, no review batch still open.
 
   Just before, check two things:
