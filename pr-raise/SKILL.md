@@ -121,12 +121,48 @@ Show it in one message and ask for a yes (pre-authorised: show it and go on):
     trailing period, ≤ 72 chars;
   - body says what and why in a few lines; primary sources as URLs when the
     change rests on external facts;
-  - no trailer.
+  - no trailer;
+  - `[skip ci]` as the body's last line when Skip CI (below) says so.
 - **Title:** same `type(scope): summary` form. One commit → its subject; several
-  → the summary of the whole.
+  → the summary of the whole. Never `[skip ci]`: GitLab skips MR pipelines on
+  it, and the merge commit carries the title to the target.
+- **CI:** `skipped ([skip ci]): <why>`, or `runs`, with the reason when a skip
+  was possible but the forge blocks it.
 - **Description** (below).
 - **Draft or ready:** Draft if any pre-flight check or the review failed, with the reasons.
 - **Reviewers**, and source-branch removal on merge (on by default here).
+
+### Skip CI
+
+A change no CI job checks skips the pipeline, to save CI minutes. Every commit
+in the MR carries `[skip ci]`, which GitLab and GitHub Actions both honour in
+the pushed head commit's message, only when all three hold:
+
+- **No job checks what changed.** Read the whole CI config (`.gitlab-ci.yml`
+  or the project's `ci_config_path`, its `include:`s, `.github/workflows/*`).
+  Every changed file is prose (Markdown, `docs/`, a skill with no scripts), and
+  no job reads it: no lint, spell or link check, docs or Pages build, and no
+  `changes:` or `paths:` glob that matches it. Not when any file is code, a
+  script, a test, CI or build config, a lockfile or generated. Unsure: run CI.
+- **A skipped pipeline can still merge.**
+  - GitLab: `glab api projects/<id>` has `only_allow_merge_if_pipeline_succeeds`
+    false or `allow_merge_on_skipped_pipeline` true. Otherwise the skipped
+    pipeline blocks the merge.
+  - GitHub: no required status check in `gh api repos/<o>/<r>/branches/<target>`
+    (`.protection.required_status_checks`) and none in
+    `gh api repos/<o>/<r>/rules/branches/<target>`. A skipped workflow leaves a
+    required check Pending, which blocks the merge. No `.github/workflows/`:
+    nothing runs, so no tag.
+- **The tag stays off the target.** A merge that copies the branch's commits or
+  their bodies onto the target skips the target's pipeline too.
+  - GitLab: `merge_method` is `merge` or `rebase_merge`, and the squash commit
+    template (`squash_commit_template`) has no `%{all_commits}`.
+  - GitHub (`gh api repos/<o>/<r>`): rebase merging is off
+    (`allow_rebase_merge`), and squash is off or its `squash_merge_commit_message`
+    isn't `COMMIT_MESSAGES`.
+
+Pre-flight still runs locally. A later commit that changes something a job
+checks has no tag, so its push runs the pipeline.
 
 ### Description
 
@@ -216,6 +252,7 @@ MR !881 opened (Draft: 1 pre-flight issue): <url>
 fix(api): handle empty results in the order search  — fix/acme-154-empty-search -> main
 Commits: 2 · Reviewers: sam
 Pre-flight: tests ok, lint 1 issue (internal/x.go:42), coverage 71.2% vs 70.9%
+CI: runs
 Left out: modules/frontend/notes.md (untracked)
 Ticket https://kaneo.example/acme/task/ACME-154: to-do → in-review (commented)
 Monitoring: mr-881-monitor running in the pane on the right
